@@ -125,21 +125,124 @@ def merge_audio(input_dir, output_file, progress_callback, status_callback, comp
         complete_callback(False)
 
 
+def parse_time_input(time_str):
+    """Parse time string like '37.30' or '00:00:37.30' to seconds."""
+    time_str = time_str.strip()
+    if ':' in time_str:
+        parts = time_str.split(':')
+        if len(parts) == 3:
+            h, m, s = parts
+            return float(h) * 3600 + float(m) * 60 + float(s)
+        elif len(parts) == 2:
+            m, s = parts
+            return float(m) * 60 + float(s)
+        else:
+            raise ValueError("时间格式不正确")
+    else:
+        return float(time_str)
+
+def get_video_info(file_path):
+    """Get video duration, resolution, and file size."""
+    cmd = [
+        'ffprobe', '-v', 'error',
+        '-select_streams', 'v:0',
+        '-show_entries', 'stream=width,height,duration',
+        '-show_entries', 'format=duration,size',
+        '-of', 'json', file_path
+    ]
+    try:
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                creationflags=CREATE_NO_WINDOW, text=True, encoding='utf-8')
+        if result.returncode != 0:
+            raise Exception(result.stderr.strip())
+        import json
+        data = json.loads(result.stdout)
+        stream = data.get('streams', [{}])[0] if data.get('streams') else {}
+        fmt = data.get('format', {})
+        duration = float(stream.get('duration', 0) or fmt.get('duration', 0))
+        width = int(stream.get('width', 0))
+        height = int(stream.get('height', 0))
+        size_bytes = int(fmt.get('size', 0))
+        return duration, width, height, size_bytes
+    except Exception as e:
+        raise Exception(f"无法获取视频信息: {e}")
+
+def format_file_size(size_bytes):
+    if size_bytes < 1024:
+        return f"{size_bytes} B"
+    elif size_bytes < 1024 * 1024:
+        return f"{size_bytes / 1024:.1f} KB"
+    elif size_bytes < 1024 * 1024 * 1024:
+        return f"{size_bytes / (1024 * 1024):.1f} MB"
+    else:
+        return f"{size_bytes / (1024 * 1024 * 1024):.2f} GB"
+
+def format_duration(seconds):
+    h = int(seconds // 3600)
+    m = int((seconds % 3600) // 60)
+    s = seconds % 60
+    if h > 0:
+        return f"{h:02d}:{m:02d}:{s:05.2f}"
+    else:
+        return f"{m:02d}:{s:05.2f}"
+
+def clip_video(input_file, output_file, start_time, end_time, progress_callback, status_callback, complete_callback):
+    try:
+        status_callback("正在截取视频 (无损模式)...")
+        progress_callback(0.2)
+        duration = end_time - start_time
+        cmd = [
+            'ffmpeg', '-y',
+            '-ss', str(start_time),
+            '-i', input_file,
+            '-t', str(duration),
+            '-c', 'copy',
+            '-avoid_negative_ts', 'make_zero',
+            output_file
+        ]
+        result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                creationflags=CREATE_NO_WINDOW, text=True, encoding='utf-8')
+        if result.returncode != 0:
+            status_callback("无损截取失败，正在重新编码...")
+            progress_callback(0.4)
+            cmd_re = [
+                'ffmpeg', '-y',
+                '-ss', str(start_time),
+                '-i', input_file,
+                '-t', str(duration),
+                '-avoid_negative_ts', 'make_zero',
+                output_file
+            ]
+            result_re = subprocess.run(cmd_re, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                       creationflags=CREATE_NO_WINDOW, text=True, encoding='utf-8')
+            if result_re.returncode != 0:
+                print(result_re.stderr)
+                raise Exception("FFmpeg 截取视频时出错。")
+        progress_callback(1.0)
+        status_callback("截取完成！")
+        complete_callback(True)
+    except Exception as e:
+        status_callback(f"错误: {str(e)}")
+        complete_callback(False)
+
+
 class MediaSegmenterApp(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("音视频处理工具 (分割 / 合并)")
-        self.geometry("450x550")
+        self.title("音视频处理工具")
+        self.geometry("500x620")
         self.resizable(False, False)
         
         self.tabview = ctk.CTkTabview(self)
         self.tabview.pack(padx=20, pady=(10, 20), fill="both", expand=True)
         
-        self.tab_segment = self.tabview.add("分割")
-        self.tab_merge = self.tabview.add("合并")
+        self.tab_segment = self.tabview.add("音频分割")
+        self.tab_merge = self.tabview.add("音频合并")
+        self.tab_video_clip = self.tabview.add("视频截取")
         
         self.setup_segment_tab()
         self.setup_merge_tab()
+        self.setup_video_clip_tab()
 
     def setup_segment_tab(self):
         # Audio File Selection
@@ -356,6 +459,155 @@ class MediaSegmenterApp(ctk.CTk):
                 self.lbl_merge_status.configure(text_color="#dc3545")
                 messagebox.showerror("错误", "合并过程中发生错误，请查看提示。")
         self.after(0, _reset_ui)
+
+    # ============================================================
+    # Video Clip Tab
+    # ============================================================
+    def setup_video_clip_tab(self):
+        tab = self.tab_video_clip
+        self.video_file = None
+        self.video_duration = 0
+        self.video_output_dir = None
+
+        # --- File Selection ---
+        self.lbl_video_file = ctk.CTkLabel(tab, text="未选择视频文件", font=("Microsoft YaHei UI", 13), text_color="gray")
+        self.lbl_video_file.pack(pady=(10, 3), padx=10, anchor="w")
+        self.btn_select_video = ctk.CTkButton(tab, text="选择视频文件", command=self.select_video_file, height=34)
+        self.btn_select_video.pack(pady=(0, 5), padx=10, fill="x")
+
+        # --- Video Info ---
+        self.frm_video_info = ctk.CTkFrame(tab)
+        self.frm_video_info.pack(pady=5, padx=10, fill="x")
+        self.lbl_vinfo_duration = ctk.CTkLabel(self.frm_video_info, text="时长: --", font=("Microsoft YaHei UI", 12))
+        self.lbl_vinfo_duration.grid(row=0, column=0, padx=10, pady=4, sticky="w")
+        self.lbl_vinfo_resolution = ctk.CTkLabel(self.frm_video_info, text="分辨率: --", font=("Microsoft YaHei UI", 12))
+        self.lbl_vinfo_resolution.grid(row=0, column=1, padx=10, pady=4, sticky="w")
+        self.lbl_vinfo_size = ctk.CTkLabel(self.frm_video_info, text="大小: --", font=("Microsoft YaHei UI", 12))
+        self.lbl_vinfo_size.grid(row=0, column=2, padx=10, pady=4, sticky="w")
+
+        # --- Time Input ---
+        self.frm_clip_params = ctk.CTkFrame(tab, fg_color="transparent")
+        self.frm_clip_params.pack(pady=5, padx=10, fill="x")
+        self.frm_clip_params.columnconfigure(0, weight=1)
+        self.frm_clip_params.columnconfigure(1, weight=2)
+
+        ctk.CTkLabel(self.frm_clip_params, text="开始时间:", font=("Microsoft YaHei UI", 13)).grid(row=0, column=0, padx=(0, 10), pady=8, sticky="e")
+        self.entry_clip_start = ctk.CTkEntry(self.frm_clip_params, width=160, height=32, placeholder_text="例: 37.30 或 00:00:37.30")
+        self.entry_clip_start.grid(row=0, column=1, pady=8, sticky="w")
+
+        ctk.CTkLabel(self.frm_clip_params, text="结束时间:", font=("Microsoft YaHei UI", 13)).grid(row=1, column=0, padx=(0, 10), pady=8, sticky="e")
+        self.entry_clip_end = ctk.CTkEntry(self.frm_clip_params, width=160, height=32, placeholder_text="例: 47.90 或 00:00:47.90")
+        self.entry_clip_end.grid(row=1, column=1, pady=8, sticky="w")
+
+        # --- Buttons ---
+        self.frm_clip_buttons = ctk.CTkFrame(tab, fg_color="transparent")
+        self.frm_clip_buttons.pack(pady=(8, 5), padx=10, fill="x")
+        self.btn_start_clip = ctk.CTkButton(self.frm_clip_buttons, text="开始截取", command=self.start_clipping, height=42, font=("Microsoft YaHei UI", 14, "bold"), fg_color="#28a745", hover_color="#218838")
+        self.btn_start_clip.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        self.btn_open_clip_dir = ctk.CTkButton(self.frm_clip_buttons, text="打开输出目录", command=self.open_clip_output_dir, height=42, fg_color="#6c757d", hover_color="#5a6268")
+        self.btn_open_clip_dir.pack(side="left", fill="x", expand=True, padx=(5, 0))
+
+        # --- Progress ---
+        self.clip_progress_bar = ctk.CTkProgressBar(tab, height=10)
+        self.clip_progress_bar.pack(pady=(8, 3), padx=10, fill="x")
+        self.clip_progress_bar.set(0)
+        self.lbl_clip_status = ctk.CTkLabel(tab, text="等待开始...", text_color="gray", font=("Microsoft YaHei UI", 12))
+        self.lbl_clip_status.pack(pady=3)
+
+    def select_video_file(self):
+        file_path = filedialog.askopenfilename(
+            title="选择视频文件",
+            filetypes=(("视频文件", "*.mp4 *.mkv *.avi *.mov *.flv *.wmv *.webm *.ts"), ("所有文件", "*.*"))
+        )
+        if not file_path:
+            return
+        self.video_file = file_path
+        self.video_output_dir = os.path.dirname(file_path)
+        short_name = os.path.basename(file_path)
+        if len(short_name) > 35:
+            short_name = short_name[:18] + "..." + short_name[-12:]
+        self.lbl_video_file.configure(text=f"已选择: {short_name}", text_color=("black", "white"))
+        # Fetch info in background
+        threading.Thread(target=self._load_video_info, args=(file_path,), daemon=True).start()
+
+    def _load_video_info(self, file_path):
+        try:
+            duration, w, h, size = get_video_info(file_path)
+            self.video_duration = duration
+            self.after(0, lambda: self.lbl_vinfo_duration.configure(text=f"时长: {format_duration(duration)}"))
+            res_text = f"{w}x{h}" if w and h else "未知"
+            self.after(0, lambda: self.lbl_vinfo_resolution.configure(text=f"分辨率: {res_text}"))
+            self.after(0, lambda: self.lbl_vinfo_size.configure(text=f"大小: {format_file_size(size)}"))
+        except Exception as e:
+            self.after(0, lambda: self.lbl_clip_status.configure(text=f"获取信息失败: {e}", text_color="#dc3545"))
+
+    def start_clipping(self):
+        if not self.video_file:
+            messagebox.showwarning("提示", "请先选择一个视频文件！")
+            return
+        # Parse and validate times
+        try:
+            start_t = parse_time_input(self.entry_clip_start.get())
+            end_t = parse_time_input(self.entry_clip_end.get())
+        except (ValueError, IndexError):
+            messagebox.showwarning("提示", "时间格式不正确！\n支持: 37.30 或 00:00:37.30")
+            return
+        if start_t < 0:
+            messagebox.showwarning("提示", "开始时间不能为负数！")
+            return
+        if end_t <= start_t:
+            messagebox.showwarning("提示", "结束时间必须大于开始时间！")
+            return
+        if self.video_duration > 0 and end_t > self.video_duration + 0.5:
+            messagebox.showwarning("提示", f"结束时间不能超过视频总时长 ({format_duration(self.video_duration)})！")
+            return
+
+        # Build output filename
+        base, ext = os.path.splitext(os.path.basename(self.video_file))
+        start_str = f"{start_t:.2f}"
+        end_str = f"{end_t:.2f}"
+        out_name = f"{base}_clip_{start_str}_{end_str}{ext}"
+        output_file = os.path.join(self.video_output_dir, out_name)
+
+        # Disable UI
+        self.btn_start_clip.configure(state="disabled", text="处理中...")
+        self.btn_select_video.configure(state="disabled")
+        self.entry_clip_start.configure(state="disabled")
+        self.entry_clip_end.configure(state="disabled")
+        self.clip_progress_bar.set(0)
+        self.lbl_clip_status.configure(text="正在截取...", text_color="#17a2b8")
+
+        threading.Thread(target=clip_video, args=(
+            self.video_file, output_file, start_t, end_t,
+            self.update_clip_progress, self.update_clip_status, self.on_clip_complete
+        ), daemon=True).start()
+
+    def open_clip_output_dir(self):
+        target = self.video_output_dir or "."
+        if os.path.isdir(target):
+            os.startfile(target)
+        else:
+            messagebox.showinfo("提示", "输出目录不存在，请先选择视频文件。")
+
+    def update_clip_progress(self, value):
+        self.after(0, lambda: self.clip_progress_bar.set(value))
+
+    def update_clip_status(self, text):
+        self.after(0, lambda: self.lbl_clip_status.configure(text=text))
+
+    def on_clip_complete(self, success):
+        def _reset():
+            self.btn_start_clip.configure(state="normal", text="开始截取")
+            self.btn_select_video.configure(state="normal")
+            self.entry_clip_start.configure(state="normal")
+            self.entry_clip_end.configure(state="normal")
+            if success:
+                self.lbl_clip_status.configure(text_color="#28a745")
+                messagebox.showinfo("成功", "视频截取已完成！")
+            else:
+                self.lbl_clip_status.configure(text_color="#dc3545")
+                messagebox.showerror("错误", "截取过程中发生错误，请查看提示。")
+        self.after(0, _reset)
 
 if __name__ == "__main__":
     app = MediaSegmenterApp()
