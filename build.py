@@ -6,7 +6,8 @@ options = [
     '--name=MediaSegmenter',
     '--windowed',
     '--onefile',
-    '--clean'
+    '--clean',
+    '--collect-all', 'customtkinter'
 ]
 
 PyInstaller.__main__.run(options)
