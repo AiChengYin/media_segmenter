@@ -4,9 +4,20 @@ import shutil
 import tempfile
 import subprocess
 import threading
+import multiprocessing
 import tkinter as tk
 from tkinter import filedialog, messagebox, font as tkfont
 import customtkinter as ctk
+
+# -------------------------------------------------------------
+# 0. 任务栏专属进程标识注入 (Win32 AppUserModelID)
+# -------------------------------------------------------------
+if sys.platform == "win32":
+    try:
+        import ctypes
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("company.mediasegmenter.client.2026")
+    except Exception:
+        pass
 
 # -------------------------------------------------------------
 # 1. 无控制台与标准流安全保护 (针对 PyInstaller --windowed 模式)
@@ -145,6 +156,10 @@ def run_media_cmd(cmd, cwd=None):
         bin_lower = os.path.basename(cmd[0]).lower()
         if 'ffmpeg' in bin_lower and '-nostdin' not in cmd:
             cmd.insert(1, '-nostdin')
+
+        # 若未指定 cwd，显式设为二进制文件所在目录，确保 Windows 动态链接器命中同级伴生 DLL
+        if cwd is None and os.path.isfile(cmd[0]):
+            cwd = os.path.dirname(os.path.abspath(cmd[0]))
 
     return subprocess.run(
         cmd,
@@ -1714,5 +1729,17 @@ class MediaSegmenterApp(ctk.CTk):
         self.after(0, _reset)
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
+
+    # 单例运行守护：防多开并置顶已有窗口
+    try:
+        from single_instance import SingleInstanceGuard
+        _guard = SingleInstanceGuard("Local\\MediaSegmenter_SingleInstance_Mutex_2026")
+        if _guard.is_already_running():
+            _guard.restore_and_activate_existing_window("音视频处理工具 · Media Segmenter")
+            sys.exit(0)
+    except Exception as e:
+        safe_log(f"SingleInstanceGuard warning: {e}")
+
     app = MediaSegmenterApp()
     app.mainloop()
