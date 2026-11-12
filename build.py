@@ -92,6 +92,13 @@ def main():
     for bf in binary_files:
         options.extend(['--add-binary', f"{bf};ffmpeg_bin"])
 
+    # 配置应用程序图标 (若存在 icon/app.ico)
+    icon_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'icon', 'app.ico')
+    if os.path.isfile(icon_file):
+        options.append(f'--icon={icon_file}')
+        options.extend(['--add-data', f'{icon_file};icon'])
+        print(f"  + 已挂载应用图标: {icon_file}")
+
     print(f"\n[3/3] 开始调用 PyInstaller 进行单文件打包...")
     PyInstaller.__main__.run(options)
 

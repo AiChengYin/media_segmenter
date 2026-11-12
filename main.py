@@ -88,6 +88,18 @@ def get_binary_path(bin_name):
 
     return bin_name
 
+def get_resource_path(relative_path):
+    """获取程序静态资源路径（兼容源码直接运行与 PyInstaller 打包环境）"""
+    if hasattr(sys, '_MEIPASS'):
+        p = os.path.join(sys._MEIPASS, relative_path)
+        if os.path.exists(p):
+            return os.path.abspath(p)
+    app_dir = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(os.path.abspath(__file__))
+    p = os.path.join(app_dir, relative_path)
+    if os.path.exists(p):
+        return os.path.abspath(p)
+    return p
+
 def setup_runtime_environment():
     """将内置 ffmpeg_bin 注入 PATH 并调用 os.add_dll_directory 加载伴随 DLL"""
     bin_dirs = []
@@ -649,6 +661,15 @@ class MediaSegmenterApp(ctk.CTk):
         ctk.set_default_color_theme("blue")
         
         self.title("音视频处理工具 · Media Segmenter")
+        
+        # 窗口与任务栏图标设置
+        try:
+            icon_path = get_resource_path(os.path.join("icon", "app.ico"))
+            if os.path.isfile(icon_path):
+                self.iconbitmap(icon_path)
+        except Exception as e:
+            safe_log(f"设置窗口图标失败: {e}")
+
         self.geometry("640x730")
         self.minsize(580, 620)
         self.resizable(True, True)
