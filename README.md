@@ -1,6 +1,6 @@
 # MediaSegmenter (音视频处理工具)
 
-基于 Python + `customtkinter` 构建的轻量级音视频处理桌面应用，底层依赖 `FFmpeg`。
+基于 Python + `customtkinter` 构建的轻量级音视频处理桌面应用，底层依赖 `FFmpeg`。采用了「纯白秩序工坊 · Modern Clean Light」现代轻量化原生视觉设计，0 额外运行开销，秒级极速启动。
 
 ## 主要功能
 

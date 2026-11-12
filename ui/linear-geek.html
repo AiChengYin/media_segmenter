@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1280, initial-scale=1.0">
+  <title>极客批处理 · Raycast / Linear 键盘优先效率台</title>
+  <style>
+    :root {
+      --bg-canvas: #090C10;
+      --bg-sidebar: #0D1117;
+      --bg-card: #161B22;
+      --bg-card-hover: #1F242C;
+      --bg-card-active: #212836;
+      --border-subtle: #21262D;
+      --border-focus: #388BFD;
+      --text-main: #F0F6FC;
+      --text-sub: #8B949E;
+      --text-muted: #484F58;
+      --accent-blue: #58A6FF;
+      --accent-green: #3FB950;
+      --accent-orange: #F0883E;
+      --accent-purple: #BC8CFF;
+      --font-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg-canvas);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      height: 820px;
+      overflow: hidden;
+      display: flex;
+    }
+
+    /* Left Sidebar: Batch Queue (340px) */
+    .sidebar-queue {
+      width: 340px;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .queue-topbar {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .queue-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .terminal-dot { width: 8px; height: 8px; background: var(--accent-green); border-radius: 50%; box-shadow: 0 0 6px var(--accent-green); }
+    .queue-h1 {
+      font-size: 13px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      letter-spacing: 0.04em;
+    }
+    .kbd-chip {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: var(--text-sub);
+    }
+
+    .queue-search-row {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .queue-search-input {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 7px 12px;
+      font-size: 12px;
+      color: var(--text-main);
+      font-family: var(--font-mono);
+      outline: none;
+    }
+    .queue-search-input:focus {
+      border-color: var(--border-focus);
+    }
+
+    .queue-items-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .queue-file-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .queue-file-card:hover {
+      background: var(--bg-card-hover);
+      border-color: #30363D;
+    }
+    .queue-file-card.active {
+      background: var(--bg-card-active);
+      border-color: var(--accent-blue);
+      box-shadow: inset 3px 0 0 var(--accent-blue);
+    }
+    .card-file-name {
+      font-size: 13px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      color: #FFF;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .card-file-stats {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-sub);
+    }
+
+    .queue-bottom-actions {
+      padding: 12px 16px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      gap: 8px;
+    }
+    .btn-queue-action {
+      flex: 1;
+      padding: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-main);
+      cursor: pointer;
+      text-align: center;
+    }
+    .btn-queue-action:hover { border-color: var(--accent-blue); }
+
+    /* Right Main Panel */
+    .geek-main-view {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-canvas);
+      overflow-y: auto;
+    }
+
+    /* Top Command Header Bar */
+    .cmd-header-bar {
+      height: 56px;
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-sidebar);
+      flex-shrink: 0;
+    }
+    .target-file-breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--text-sub);
+    }
+    .target-highlight {
+      color: var(--accent-blue);
+      font-weight: 700;
+    }
+    .cmd-actions-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .btn-linear-run {
+      background: linear-gradient(180deg, #238636, #196C2E);
+      border: 1px solid #2EA043;
+      color: #FFF;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      padding: 7px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 0 12px rgba(46, 160, 67, 0.4);
+    }
+
+    /* Control Strip */
+    .control-deck-strip {
+      padding: 16px 24px;
+      background: var(--bg-sidebar);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .params-stepper-cluster {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .mini-stepper-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-family: var(--font-mono);
+    }
+    .stepper-val-chip {
+      color: var(--accent-orange);
+      font-weight: 700;
+    }
+    .mode-select-pill-bar {
+      display: flex;
+      background: var(--bg-canvas);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 2px;
+    }
+    .mode-pill-opt {
+      padding: 4px 12px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      border-radius: 4px;
+      color: var(--text-sub);
+      cursor: pointer;
+    }
+    .mode-pill-opt.active {
+      background: var(--accent-blue);
+      color: #000;
+      font-weight: 700;
+    }
+
+    /* Output Matrix Grid (The 8 Slice Cards) */
+    .matrix-content-scroll {
+      flex: 1;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .matrix-heading-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .matrix-title {
+      font-size: 12px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--text-sub);
+    }
+    .matrix-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+    .slice-grid-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: all 0.15s ease;
+    }
+    .slice-grid-card:hover {
+      border-color: #388BFD;
+      background: var(--bg-card-hover);
+    }
+    .card-part-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .part-title-tag {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--accent-blue);
+    }
+    .part-time-span {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: #FFF;
+    }
+    .part-meta-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 6px;
+    }
+
+    /* Realtime Terminal Log Box */
+    .terminal-cli-deck {
+      background: #010409;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-family: var(--font-mono);
+      box-shadow: inset 0 2px 8px rgba(0,0,0,0.8);
+    }
+    .terminal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+      border-bottom: 1px solid #161B22;
+      padding-bottom: 6px;
+    }
+    .terminal-code-line {
+      font-size: 12px;
+      color: var(--accent-green);
+      line-height: 1.5;
+    }
+    .terminal-cmd-param {
+      color: var(--accent-blue);
+    }
+  </style>
+</head>
+<body>
+  <!-- Left Batch Queue -->
+  <aside class="sidebar-queue">
+    <div class="queue-topbar">
+      <div class="queue-title-row">
+        <span class="terminal-dot"></span>
+        <span class="queue-h1">BATCH MEDIA QUEUE</span>
+      </div>
+      <span class="kbd-chip">3 FILES</span>
+    </div>
+
+    <div class="queue-search-row">
+      <input class="queue-search-input" placeholder="Search queue ( / )" value="podcast">
+    </div>
+
+    <div class="queue-items-list">
+      <div class="queue-file-card active">
+        <div class="card-file-name">podcast_ep12.mp3</div>
+        <div class="card-file-stats">
+          <span>00:42:18 · 58.4 MB</span>
+          <span style="color: var(--accent-green);">[ACTIVE]</span>
+        </div>
+      </div>
+
+      <div class="queue-file-card">
+        <div class="card-file-name">interview_raw_take01.wav</div>
+        <div class="card-file-stats">
+          <span>01:15:30 · 780 MB</span>
+          <span>[QUEUED]</span>
+        </div>
+      </div>
+
+      <div class="queue-file-card">
+        <div class="card-file-name">livestream_clip_4k.mp4</div>
+        <div class="card-file-stats">
+          <span>00:28:45 · 340 MB</span>
+          <span>[QUEUED]</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="queue-bottom-actions">
+      <button class="btn-queue-action">+ 添加媒体</button>
+      <button class="btn-queue-action">清空队列</button>
+    </div>
+  </aside>
+
+  <!-- Right Main View -->
+  <main class="geek-main-view">
+    <div class="cmd-header-bar">
+      <div class="target-file-breadcrumb">
+        <span>source</span>
+        <span>/</span>
+        <span class="target-highlight">podcast_ep12.mp3</span>
+        <span>(MPEG Audio 44.1kHz · 320kbps)</span>
+      </div>
+      <div class="cmd-actions-group">
+        <span class="kbd-chip">⌥O 打开目录</span>
+        <button class="btn-linear-run">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <span>执行批切片 (⌘Enter)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Parameter Strip -->
+    <div class="control-deck-strip">
+      <div class="params-stepper-cluster">
+        <div class="mini-stepper-box">
+          <span style="color: var(--text-sub);">分段数量:</span>
+          <span class="stepper-val-chip">8 PARTS</span>
+        </div>
+        <div class="mini-stepper-box">
+          <span style="color: var(--text-sub);">前置重叠:</span>
+          <span class="stepper-val-chip">3.0s</span>
+        </div>
+        <div class="mini-stepper-box">
+          <span style="color: var(--text-sub);">编码模式:</span>
+          <span style="color: var(--accent-green); font-weight: 700;">STREAM COPY (-c copy)</span>
+        </div>
+      </div>
+
+      <div class="mode-select-pill-bar">
+        <span class="mode-pill-opt active">均匀分割</span>
+        <span class="mode-pill-opt">短视频 60s</span>
+        <span class="mode-pill-opt">自定义时段</span>
+      </div>
+    </div>
+
+    <!-- Slices Grid Preview -->
+    <div class="matrix-content-scroll">
+      <div class="matrix-heading-row">
+        <span class="matrix-title">GENERATED SLICE CHUNKS (8 TARGET SEGMENTS)</span>
+        <span style="font-size: 11px; font-family: var(--font-mono); color: var(--accent-green);">● Output: /output_dir/</span>
+      </div>
+
+      <div class="matrix-cards-grid">
+        <div class="slice-grid-card">
+          <div class="card-part-header">
+            <span class="part-title-tag">PART 01</span>
+            <span class="kbd-chip">05:17</span>
+          </div>
+          <div class="part-time-span">00:00.00 → 05:17.25</div>
+          <div class="part-meta-footer">
+            <span>podcast_ep12_part01.mp3</span>
+            <span>7.3 MB</span>
+          </div>
+        </div>
+
+        <div class="slice-grid-card">
+          <div class="card-part-header">
+            <span class="part-title-tag">PART 02</span>
+            <span class="kbd-chip">05:20</span>
+          </div>
+          <div class="part-time-span">05:14.25 → 10:34.50</div>
+          <div class="part-meta-footer">
+            <span style="color: var(--accent-orange);">Overlap: 3.0s</span>
+            <span>7.4 MB</span>
+          </div>
+        </div>
+
+        <div class="slice-grid-card">
+          <div class="card-part-header">
+            <span class="part-title-tag">PART 03</span>
+            <span class="kbd-chip">05:20</span>
+          </div>
+          <div class="part-time-span">10:31.50 → 15:51.75</div>
+          <div class="part-meta-footer">
+            <span style="color: var(--accent-orange);">Overlap: 3.0s</span>
+            <span>7.4 MB</span>
+          </div>
+        </div>
+
+        <div class="slice-grid-card">
+          <div class="card-part-header">
+            <span class="part-title-tag">PART 04</span>
+            <span class="kbd-chip">05:20</span>
+          </div>
+          <div class="part-time-span">15:48.75 → 21:09.00</div>
+          <div class="part-meta-footer">
+            <span style="color: var(--accent-orange);">Overlap: 3.0s</span>
+            <span>7.4 MB</span>
+          </div>
+        </div>
+
+        <div class="slice-grid-card">
+          <div class="card-part-header">
+            <span class="part-title-tag">PART 05</span>
+            <span class="kbd-chip">05:20</span>
+          </div>
+          <div class="part-time-span">21:06.00 → 26:26.25</div>
+          <div class="part-meta-footer">
+            <span style="color: var(--accent-orange);">Overlap: 3.0s</span>
+            <span>7.4 MB</span>
+          </div>
+        </div>
+
+        <div class="slice-grid-card">
+          <div class="card-part-header">
+            <span class="part-title-tag">PART 06</span>
+            <span class="kbd-chip">05:20</span>
+          </div>
+          <div class="part-time-span">26:23.25 → 31:43.50</div>
+          <div class="part-meta-footer">
+            <span style="color: var(--accent-orange);">Overlap: 3.0s</span>
+            <span>7.4 MB</span>
+          </div>
+        </div>
+
+        <div class="slice-grid-card">
+          <div class="card-part-header">
+            <span class="part-title-tag">PART 07</span>
+            <span class="kbd-chip">05:20</span>
+          </div>
+          <div class="part-time-span">31:40.50 → 37:00.75</div>
+          <div class="part-meta-footer">
+            <span style="color: var(--accent-orange);">Overlap: 3.0s</span>
+            <span>7.4 MB</span>
+          </div>
+        </div>
+
+        <div class="slice-grid-card">
+          <div class="card-part-header">
+            <span class="part-title-tag">PART 08</span>
+            <span class="kbd-chip">05:17</span>
+          </div>
+          <div class="part-time-span">36:57.75 → 42:18.00</div>
+          <div class="part-meta-footer">
+            <span>podcast_ep12_part08.mp3</span>
+            <span>7.2 MB</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Realtime FFmpeg Command Preview -->
+      <div class="terminal-cli-deck">
+        <div class="terminal-header">
+          <span>GENERATED FFMPEG PIPELINE EXECUTION COMMAND (PART 02)</span>
+          <span>FAST STREAM COPY</span>
+        </div>
+        <div class="terminal-code-line">
+          $ ffmpeg -y -ss <span class="terminal-cmd-param">314.25</span> -i <span class="terminal-cmd-param">podcast_ep12.mp3</span> -t <span class="terminal-cmd-param">320.25</span> -c <span class="terminal-cmd-param">copy</span> podcast_ep12_part02.mp3
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

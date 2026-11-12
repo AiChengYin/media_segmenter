@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1280, initial-scale=1.0">
+  <title>现状 · CustomTkinter 默认桌面风格</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #242424;
+      color: #E0E0E0;
+      font-family: "Microsoft YaHei UI", -apple-system, sans-serif;
+      height: 820px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* Fixed 600x680 Window Container simulating CustomTkinter */
+    .app-window {
+      width: 600px;
+      height: 680px;
+      background-color: #2B2B2B;
+      border-radius: 10px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #3F3F3F;
+      overflow: hidden;
+    }
+    .window-titlebar {
+      height: 38px;
+      background-color: #1F1F1F;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      font-size: 13px;
+      color: #CCCCCC;
+      border-bottom: 1px solid #333333;
+      user-select: none;
+    }
+    .window-controls {
+      display: flex;
+      gap: 8px;
+    }
+    .control-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #444;
+    }
+    /* Main Tabview (Outer) */
+    .main-tabview {
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      gap: 12px;
+    }
+    .tab-bar-outer {
+      display: flex;
+      background-color: #1F1F1F;
+      border-radius: 6px;
+      padding: 3px;
+      gap: 4px;
+    }
+    .tab-btn-outer {
+      flex: 1;
+      padding: 7px;
+      font-size: 13px;
+      text-align: center;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #888;
+      background: transparent;
+    }
+    .tab-btn-outer.active {
+      background-color: #3B8ED0;
+      color: #FFF;
+      font-weight: bold;
+    }
+
+    /* Sub Tabview (Inner) */
+    .sub-tabview {
+      background-color: #333333;
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      gap: 12px;
+    }
+    .tab-bar-inner {
+      display: flex;
+      background-color: #242424;
+      border-radius: 6px;
+      padding: 3px;
+      gap: 4px;
+    }
+    .tab-btn-inner {
+      flex: 1;
+      padding: 6px;
+      font-size: 12px;
+      text-align: center;
+      border-radius: 4px;
+      cursor: pointer;
+      color: #888;
+    }
+    .tab-btn-inner.active {
+      background-color: #3B8ED0;
+      color: #FFF;
+    }
+
+    /* Form Content */
+    .form-container {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding-top: 8px;
+    }
+    .lbl-file-hint {
+      font-size: 13px;
+      color: #999;
+    }
+    .btn-ctk-primary {
+      height: 36px;
+      background-color: #1F6AA5;
+      color: #FFF;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .params-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      align-items: center;
+      background: transparent;
+      padding: 4px 0;
+    }
+    .param-label {
+      font-size: 13px;
+      text-align: right;
+      padding-right: 12px;
+    }
+    .ctk-entry {
+      width: 130px;
+      height: 32px;
+      background-color: #1F1F1F;
+      border: 1px solid #3F3F3F;
+      border-radius: 6px;
+      color: #FFF;
+      padding: 0 10px;
+      font-size: 13px;
+      outline: none;
+    }
+    .btn-ctk-secondary {
+      height: 36px;
+      background-color: #6C757D;
+      color: #FFF;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .btn-start-action {
+      height: 45px;
+      background-color: #28A745;
+      color: #FFF;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 6px;
+    }
+    .progress-bar-ctk {
+      height: 10px;
+      background-color: #1F1F1F;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .progress-fill-ctk {
+      width: 45%;
+      height: 100%;
+      background-color: #3B8ED0;
+    }
+    .status-text-ctk {
+      text-align: center;
+      font-size: 12px;
+      color: #17A2B8;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Window Mockup -->
+  <div class="app-window">
+    <div class="window-titlebar">
+      <span>音视频处理工具 (CustomTkinter)</span>
+      <div class="window-controls">
+        <span class="control-dot"></span>
+        <span class="control-dot"></span>
+        <span class="control-dot"></span>
+      </div>
+    </div>
+
+    <div class="main-tabview">
+      <!-- Outer Main Tab -->
+      <div class="tab-bar-outer">
+        <div class="tab-btn-outer active">音频处理</div>
+        <div class="tab-btn-outer">视频处理</div>
+      </div>
+
+      <!-- Inner Sub Tab -->
+      <div class="sub-tabview">
+        <div class="tab-bar-inner">
+          <div class="tab-btn-inner active">音频分割</div>
+          <div class="tab-btn-inner">音频合并</div>
+          <div class="tab-btn-inner">音频截取</div>
+        </div>
+
+        <!-- Form fields -->
+        <div class="form-container">
+          <div class="lbl-file-hint">已选择: podcast_interview_episode12.mp3</div>
+          <button class="btn-ctk-primary">选择媒体文件</button>
+
+          <div class="params-grid">
+            <span class="param-label">分割数量 (每段):</span>
+            <input class="ctk-entry" value="8">
+
+            <span class="param-label">前置重叠时间(秒):</span>
+            <input class="ctk-entry" value="3">
+          </div>
+
+          <div class="lbl-file-hint">输出文件夹: C:/code/media_segmenter/output</div>
+          <button class="btn-ctk-secondary">选择输出文件夹</button>
+
+          <button class="btn-start-action">开始分割</button>
+
+          <div class="progress-bar-ctk">
+            <div class="progress-fill-ctk"></div>
+          </div>
+          <div class="status-text-ctk">正在分割: 第 4/8 段...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

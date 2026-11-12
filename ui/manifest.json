@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "project": "MediaSegmenter (严格保持 1:1 功能原结构 UI 重构)",
+  "brief": "只改 UI 视觉与质感，不改任何功能与层级。基于 baseline.html 提供 3 套极致流畅、零卡顿的全新视觉方案供选择",
+  "round": "02",
+  "lang": "zh",
+  "nativeViewport": "1280x820",
+  "candidates": [
+    {
+      "id": "baseline",
+      "name": "现状 · CustomTkinter 默认原生风格",
+      "concept": "现有的 600x680 土灰双层嵌套 Tabview，默认圆角与灰底",
+      "typography": "Microsoft YaHei UI, 12-13px",
+      "palette": ["#242424", "#2B2B2B", "#3B8ED0", "#1F6AA5", "#28A745"],
+      "traits": ["原生默认灰底", "粗线条表单", "无信息层级加权"],
+      "source": "baseline.html",
+      "baseline": true
+    },
+    {
+      "id": "baseline-obsidian",
+      "name": "方向 A：黑曜极客精工 · Obsidian Minimalist",
+      "concept": "GitHub / Raycast 级高品质暗黑桌面。冷炭微边框、极简双层卡片、翡翠绿高权执行键与等宽排版",
+      "typography": "Inter + JetBrains Mono, 12-14px 精工排版",
+      "palette": ["#06080C", "#0D1117", "#161B22", "#238636", "#58A6FF"],
+      "traits": ["严格 1:1 保留双层 Tab", "1px 发丝边框与微光感", "高对比等宽数字输入框", "零卡顿极致轻量"],
+      "source": "baseline-obsidian.html"
+    },
+    {
+      "id": "baseline-modern-light",
+      "name": "方向 B：纯白秩序工坊 · Modern Clean Light",
+      "concept": "现代桌面轻量工坊。纯净灰白画布、纯白浮动卡片、柔和弥散阴影与 Indigo 靛蓝高雅强调色",
+      "typography": "Plus Jakarta Sans + PingFang SC, 12-14px 柔和现代",
+      "palette": ["#E2E8F0", "#FFFFFF", "#F8FAFC", "#4F46E5", "#10B981"],
+      "traits": ["严格 1:1 保留双层 Tab", "纯净明亮现代卡片感", "高雅圆角胶囊与绿色渐变执行键", "零卡顿极致轻量"],
+      "source": "baseline-modern-light.html"
+    },
+    {
+      "id": "baseline-cyber-slate",
+      "name": "方向 C：太空岩灰专业版 · Cyber Slate Pro",
+      "concept": "Blender / Substance 3D 级专业多媒体面板。深岩灰微雕凹凸面板、电光青蓝高亮与高信息密度",
+      "typography": "JetBrains Mono + Inter, 12-14px 紧凑硬核",
+      "palette": ["#0D0F12", "#181B22", "#202530", "#00F0FF", "#3B82F6"],
+      "traits": ["严格 1:1 保留双层 Tab", "专业级深岩灰面板", "电光青蓝高亮状态微光", "零卡顿极致轻量"],
+      "source": "baseline-cyber-slate.html"
+    }
+  ]
+}

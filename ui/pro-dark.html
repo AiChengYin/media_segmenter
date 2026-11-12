@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1280, initial-scale=1.0">
+  <title>MediaSegmenter Pro · 音视频精工剪辑台</title>
+  <style>
+    :root {
+      --bg-canvas: #090B10;
+      --bg-panel: #11151F;
+      --bg-panel-elevated: #181F2D;
+      --bg-input: #0D111A;
+      --border-line: #222B3D;
+      --border-glow: #00E5FF;
+      --neon-cyan: #00F0FF;
+      --neon-blue: #388BFD;
+      --neon-green: #10B981;
+      --neon-amber: #F59E0B;
+      --neon-rose: #F43F5E;
+      --text-main: #F0F6FC;
+      --text-sub: #8B949E;
+      --text-muted: #586069;
+      --font-code: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, "PingFang SC", sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg-canvas);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+
+    /* Top Pro Navigation Bar */
+    .pro-header {
+      height: 56px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border-line);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: default;
+    }
+    .brand-logo-glow {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #00F0FF, #388BFD);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);
+    }
+    .brand-title {
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-family: var(--font-code);
+      color: #FFF;
+    }
+    .brand-tag {
+      font-size: 10px;
+      font-family: var(--font-code);
+      background: rgba(0, 240, 255, 0.12);
+      color: var(--neon-cyan);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* Center Mode Tabs */
+    .mode-switcher-deck {
+      display: flex;
+      background: var(--bg-input);
+      border: 1px solid var(--border-line);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 4px;
+    }
+    .mode-tab-btn {
+      padding: 6px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 6px;
+      color: var(--text-sub);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      background: transparent;
+      border: 1px solid transparent;
+    }
+    .mode-tab-btn:hover {
+      color: var(--text-main);
+    }
+    .mode-tab-btn.active {
+      background: var(--bg-panel-elevated);
+      color: var(--neon-cyan);
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.2);
+      border-color: rgba(0, 240, 255, 0.3);
+    }
+
+    .header-right-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 11px;
+      font-family: var(--font-code);
+      color: var(--text-sub);
+    }
+    .hw-accel-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--neon-green);
+    }
+    .hw-dot { width: 6px; height: 6px; background: var(--neon-green); border-radius: 50%; box-shadow: 0 0 8px var(--neon-green); }
+    .btn-open-dir {
+      background: var(--bg-input);
+      border: 1px solid var(--border-line);
+      color: var(--text-sub);
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 11px;
+      font-family: var(--font-code);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .btn-open-dir:hover { color: #FFF; border-color: var(--neon-blue); }
+
+    /* Main Timeline & Waveform Viewport */
+    .timeline-viewport {
+      flex: 1;
+      padding: 18px 24px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      background: radial-gradient(circle at 50% 20%, #151C2C 0%, #0B0E14 100%);
+      overflow: hidden;
+    }
+
+    /* HUD Bar */
+    .hud-header-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-line);
+      border-radius: 10px;
+      padding: 10px 18px;
+    }
+    .hud-file-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+    .file-icon-box {
+      width: 28px;
+      height: 28px;
+      background: rgba(56, 139, 253, 0.15);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--neon-blue);
+    }
+    .hud-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #FFF;
+      font-family: var(--font-code);
+      max-width: 420px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .hud-badges-row {
+      display: flex;
+      gap: 8px;
+    }
+    .hud-badge {
+      font-size: 11px;
+      font-family: var(--font-code);
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-line);
+      color: var(--text-sub);
+    }
+    .timecode-display {
+      font-family: var(--font-code);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--neon-cyan);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: #06080D;
+      padding: 4px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border-line);
+    }
+    .time-sep { color: var(--text-muted); font-size: 12px; }
+
+    /* Interactive Waveform Stage */
+    .waveform-stage {
+      background: #080A0F;
+      border: 1px solid var(--border-line);
+      border-radius: 12px;
+      height: 180px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: inset 0 2px 10px rgba(0,0,0,0.8);
+    }
+    /* Timeline Ruler */
+    .timeline-ruler {
+      height: 24px;
+      border-bottom: 1px solid var(--border-line);
+      background: rgba(255,255,255,0.02);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      font-size: 10px;
+      font-family: var(--font-code);
+      color: var(--text-muted);
+    }
+
+    /* Waveform Canvas Simulation */
+    .waveform-visual-container {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 16px;
+      cursor: crosshair;
+    }
+    .waveform-svg {
+      width: 100%;
+      height: 105px;
+    }
+
+    /* Dynamic Slice Markers Overlay */
+    .slice-grid-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: grid;
+      pointer-events: none;
+    }
+    .slice-block {
+      border-right: 1px dashed rgba(0, 240, 255, 0.4);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 6px;
+      transition: all 0.2s ease;
+    }
+    .slice-block:last-child {
+      border-right: none;
+    }
+    .slice-chip {
+      font-size: 9px;
+      font-family: var(--font-code);
+      font-weight: 700;
+      color: var(--neon-cyan);
+      background: rgba(0, 240, 255, 0.15);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      padding: 1px 5px;
+      border-radius: 3px;
+      width: fit-content;
+    }
+    .slice-overlap-zone {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      background: repeating-linear-gradient(
+        45deg,
+        rgba(245, 158, 11, 0.15),
+        rgba(245, 158, 11, 0.15) 3px,
+        rgba(245, 158, 11, 0.05) 3px,
+        rgba(245, 158, 11, 0.05) 6px
+      );
+      border-left: 1px solid rgba(245, 158, 11, 0.5);
+    }
+    .slice-time-label {
+      font-size: 9px;
+      font-family: var(--font-code);
+      color: var(--text-muted);
+    }
+
+    /* Clip Region Selector (For Clip Mode) */
+    .clip-range-overlay {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      background: rgba(0, 240, 255, 0.15);
+      border-left: 2px solid var(--neon-cyan);
+      border-right: 2px solid var(--neon-cyan);
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .clip-range-overlay.active {
+      display: flex;
+    }
+    .clip-duration-badge {
+      font-family: var(--font-code);
+      font-size: 11px;
+      background: #000;
+      color: var(--neon-cyan);
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--neon-cyan);
+    }
+
+    /* Playhead line */
+    .playhead-cursor {
+      position: absolute;
+      left: 36%;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #FF0055;
+      box-shadow: 0 0 10px #FF0055;
+      z-index: 5;
+      pointer-events: none;
+    }
+    .playhead-head {
+      position: absolute;
+      top: 0;
+      left: -5px;
+      width: 12px;
+      height: 12px;
+      background: #FF0055;
+      clip-path: polygon(0 0, 100% 0, 50% 100%);
+    }
+
+    /* Empty Dropzone Overlay */
+    .empty-dropzone {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(11, 15, 23, 0.94);
+      backdrop-filter: blur(8px);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      z-index: 20;
+      cursor: pointer;
+    }
+    .empty-dropzone.visible {
+      display: flex;
+    }
+    .empty-icon-ring {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: rgba(0, 240, 255, 0.08);
+      border: 1px dashed var(--neon-cyan);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--neon-cyan);
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.15);
+    }
+    .empty-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #FFF;
+    }
+    .empty-desc {
+      font-size: 12px;
+      color: var(--text-sub);
+    }
+
+    /* Bottom Pro Deck */
+    .pro-control-deck {
+      display: grid;
+      grid-template-columns: 320px 1fr 340px;
+      gap: 14px;
+      height: 255px;
+    }
+    .deck-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-line);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .card-heading {
+      font-size: 11px;
+      font-family: var(--font-code);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border-line);
+      padding-bottom: 8px;
+    }
+
+    /* Col 1: File Info */
+    .file-details-col {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 6px 0;
+    }
+    .file-meta-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+    }
+    .meta-key-muted { color: var(--text-muted); font-family: var(--font-code); }
+    .meta-val-white { color: var(--text-main); font-family: var(--font-code); font-weight: 600; }
+    .btn-replace-media {
+      background: var(--bg-input);
+      border: 1px solid var(--border-line);
+      border-radius: 6px;
+      padding: 8px;
+      font-size: 12px;
+      color: var(--text-sub);
+      cursor: pointer;
+      text-align: center;
+      font-family: var(--font-code);
+      transition: all 0.15s ease;
+    }
+    .btn-replace-media:hover {
+      color: #FFF;
+      border-color: var(--neon-blue);
+    }
+
+    /* Col 2: Center Parameters (Mode Panels) */
+    .mode-subdeck {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      padding: 6px 0;
+      height: 100%;
+      justify-content: space-between;
+    }
+    .mode-subdeck.active {
+      display: flex;
+    }
+
+    .stepper-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .stepper-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+    .stepper-desc {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+    .stepper-control {
+      display: flex;
+      align-items: center;
+      background: var(--bg-input);
+      border: 1px solid var(--border-line);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .step-btn {
+      width: 32px;
+      height: 30px;
+      background: transparent;
+      border: none;
+      color: var(--text-sub);
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .step-btn:hover { background: var(--bg-panel-elevated); color: #FFF; }
+    .step-value-input {
+      width: 60px;
+      height: 30px;
+      background: transparent;
+      border: none;
+      text-align: center;
+      color: var(--neon-cyan);
+      font-family: var(--font-code);
+      font-size: 13px;
+      font-weight: 700;
+      outline: none;
+    }
+    .quick-preset-chips {
+      display: flex;
+      gap: 6px;
+    }
+    .preset-pill {
+      font-size: 11px;
+      font-family: var(--font-code);
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-line);
+      color: var(--text-sub);
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+    .preset-pill:hover { border-color: var(--neon-blue); color: #FFF; }
+    .preset-pill.active {
+      background: rgba(0, 240, 255, 0.1);
+      border-color: var(--neon-cyan);
+      color: var(--neon-cyan);
+    }
+
+    /* Clip Inputs in Mode 2 */
+    .time-input-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .time-field-box {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .time-field-label {
+      font-size: 11px;
+      color: var(--text-sub);
+      font-family: var(--font-code);
+    }
+    .time-text-input {
+      background: var(--bg-input);
+      border: 1px solid var(--border-line);
+      border-radius: 6px;
+      padding: 6px 10px;
+      color: var(--neon-cyan);
+      font-family: var(--font-code);
+      font-size: 13px;
+      font-weight: 600;
+      outline: none;
+    }
+    .time-text-input:focus { border-color: var(--neon-cyan); }
+
+    /* Merge Inputs in Mode 3 */
+    .merge-inputs-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .merge-checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--text-sub);
+      cursor: pointer;
+    }
+    .merge-checkbox-row input {
+      accent-color: var(--neon-cyan);
+      cursor: pointer;
+    }
+
+    /* Col 3: Export Engine */
+    .export-right-body {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 4px 0;
+    }
+    .codec-toggle-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-input);
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border-line);
+      font-size: 11px;
+      font-family: var(--font-code);
+    }
+    .tag-lossless {
+      color: var(--neon-green);
+      font-weight: 700;
+    }
+    .btn-render-neon {
+      height: 48px;
+      background: linear-gradient(135deg, #00F0FF, #0072FF);
+      border: none;
+      border-radius: 8px;
+      color: #000;
+      font-size: 13px;
+      font-weight: 800;
+      font-family: var(--font-code);
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+      transition: all 0.2s ease;
+    }
+    .btn-render-neon:hover {
+      box-shadow: 0 0 30px rgba(0, 240, 255, 0.6);
+      transform: translateY(-1px);
+    }
+    .btn-render-neon:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+    .progress-hud-box {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .progress-info-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      font-family: var(--font-code);
+      color: var(--text-muted);
+    }
+    .pro-progress-track {
+      height: 6px;
+      background: #06080E;
+      border-radius: 3px;
+      overflow: hidden;
+      border: 1px solid var(--border-line);
+    }
+    .pro-progress-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #00F0FF, #10B981);
+      box-shadow: 0 0 8px var(--neon-cyan);
+      transition: width 0.15s ease;
+    }
+
+    /* Toast Notification */
+    .pro-toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #11151F;
+      border: 1px solid var(--neon-cyan);
+      border-radius: 8px;
+      padding: 12px 18px;
+      box-shadow: 0 4px 20px rgba(0, 240, 255, 0.3);
+      font-size: 13px;
+      color: #FFF;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      z-index: 100;
+      animation: toastSlide 0.25s ease-out;
+    }
+    .pro-toast.show { display: flex; }
+    @keyframes toastSlide {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="pro-header">
+    <div class="brand-wrap">
+      <div class="brand-logo-glow">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+      </div>
+      <div>
+        <div class="brand-title">MEDIA SEGMENTER PRO</div>
+      </div>
+      <span class="brand-tag">v2.5 DAW ENGINE</span>
+    </div>
+
+    <!-- Center Mode Switcher -->
+    <div class="mode-switcher-deck">
+      <button class="mode-tab-btn active" id="btnModeSegment" onclick="switchMode('segment')">
+        <span>⚡ 智能分割</span>
+      </button>
+      <button class="mode-tab-btn" id="btnModeClip" onclick="switchMode('clip')">
+        <span>🎛️ 时间截取</span>
+      </button>
+      <button class="mode-tab-btn" id="btnModeMerge" onclick="switchMode('merge')">
+        <span>🔗 批量无损合并</span>
+      </button>
+    </div>
+
+    <div class="header-right-meta">
+      <div class="hw-accel-badge">
+        <span class="hw-dot"></span>
+        <span>FFmpeg Ready</span>
+      </div>
+      <button class="btn-open-dir" onclick="openOutputFolder()" title="打开导出文件所在的系统目录">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <span>打开输出目录</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Viewport -->
+  <main class="timeline-viewport">
+    <!-- Top HUD Strip -->
+    <div class="hud-header-strip">
+      <div class="hud-file-title" onclick="chooseFile()" title="点击更换媒体文件">
+        <div class="file-icon-box">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+        </div>
+        <div>
+          <span class="hud-name" id="hudFileName">podcast_ep12_deep_learning_interview.mp3</span>
+        </div>
+      </div>
+
+      <div class="hud-badges-row">
+        <span class="hud-badge" id="hudAudioSpecs">44.1 kHz · 320 kbps</span>
+        <span class="hud-badge" id="hudChannels">Stereo</span>
+        <span class="hud-badge" id="hudFileSize">58.4 MB</span>
+      </div>
+
+      <div class="timecode-display">
+        <span id="hudPlayheadTime">00:14:28.50</span>
+        <span class="time-sep">/</span>
+        <span style="color: var(--text-sub);" id="hudTotalDuration">00:42:18.00</span>
+      </div>
+    </div>
+
+    <!-- Interactive Waveform Stage -->
+    <div class="waveform-stage" id="waveformStage">
+      <!-- Empty Dropzone State (if no file loaded) -->
+      <div class="empty-dropzone" id="emptyDropzone" onclick="chooseFile()">
+        <div class="empty-icon-ring">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <div class="empty-title">点击或拖拽媒体文件至此载入</div>
+        <div class="empty-desc">支持 MP3, WAV, M4A, FLAC, AAC, MP4, MKV, MOV 等常见格式</div>
+      </div>
+
+      <!-- Ruler -->
+      <div class="timeline-ruler" id="timelineRuler">
+        <span>00:00</span>
+        <span>05:17</span>
+        <span>10:34</span>
+        <span>15:51</span>
+        <span>21:09</span>
+        <span>26:26</span>
+        <span>31:43</span>
+        <span>37:00</span>
+        <span>42:18</span>
+      </div>
+
+      <!-- Waveform Canvas -->
+      <div class="waveform-visual-container">
+        <!-- SVG wave curve simulation -->
+        <svg class="waveform-svg" preserveAspectRatio="none" viewBox="0 0 1000 120" id="waveformSvg">
+          <defs>
+            <linearGradient id="waveGlow" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#00F0FF" stop-opacity="0.9"/>
+              <stop offset="50%" stop-color="#388BFD" stop-opacity="0.4"/>
+              <stop offset="100%" stop-color="#00F0FF" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+          <path d="M 0 60 Q 20 10, 40 60 T 80 60 T 120 20 T 160 60 T 200 15 T 240 60 T 280 30 T 320 60 T 360 10 T 400 60 T 440 25 T 480 60 T 520 15 T 560 60 T 600 35 T 640 60 T 680 18 T 720 60 T 760 30 T 800 60 T 840 12 T 880 60 T 920 28 T 960 60 T 1000 40 L 1000 60 L 0 60 Z" fill="url(#waveGlow)" />
+          <path d="M 0 60 Q 20 110, 40 60 T 80 60 T 120 100 T 160 60 T 200 105 T 240 60 T 280 90 T 320 60 T 360 110 T 400 60 T 440 95 T 480 60 T 520 105 T 560 60 T 600 85 T 640 60 T 680 102 T 720 60 T 760 90 T 800 60 T 840 108 T 880 60 T 920 92 T 960 60 T 1000 80 L 1000 60 L 0 60 Z" fill="url(#waveGlow)" />
+        </svg>
+
+        <!-- Segment Overlay Blocks -->
+        <div class="slice-grid-overlay" id="sliceGridOverlay">
+          <!-- Dynamically generated by JS -->
+        </div>
+
+        <!-- Clip Mode Range Overlay -->
+        <div class="clip-range-overlay" id="clipRangeOverlay" style="left: 20%; width: 40%;">
+          <span class="clip-duration-badge" id="clipDurationBadge">选区: 05:20.00</span>
+        </div>
+
+        <!-- Playhead -->
+        <div class="playhead-cursor" id="playheadCursor">
+          <div class="playhead-head"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Pro Deck -->
+    <div class="pro-control-deck">
+      <!-- Col 1: Source Info -->
+      <div class="deck-card">
+        <div class="card-heading">
+          <span>01 源媒体检测</span>
+          <span style="color: var(--neon-cyan);" id="mediaTypeBadge">AUDIO / MP3</span>
+        </div>
+        <div class="file-details-col">
+          <div class="file-meta-row">
+            <span class="meta-key-muted">文件格式</span>
+            <span class="meta-val-white" id="infoFileExt">.mp3 (MPEG Audio)</span>
+          </div>
+          <div class="file-meta-row">
+            <span class="meta-key-muted">时长总计</span>
+            <span class="meta-val-white" id="infoDuration">42分18秒 (2538s)</span>
+          </div>
+          <div class="file-meta-row">
+            <span class="meta-key-muted">文件大小</span>
+            <span class="meta-val-white" id="infoSize">58.4 MB</span>
+          </div>
+          <div class="file-meta-row">
+            <span class="meta-key-muted">输出路径</span>
+            <span class="meta-val-white" id="infoOutputDir" style="font-size: 10px; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">同源文件目录</span>
+          </div>
+        </div>
+        <button class="btn-replace-media" onclick="chooseFile()">📁 选择 / 更换媒体文件</button>
+      </div>
+
+      <!-- Col 2: Parameters -->
+      <div class="deck-card">
+        <div class="card-heading">
+          <span id="col2HeadingTitle">02 智能切片参数</span>
+          <span style="color: var(--neon-amber);" id="col2HeadingTag">OVERLAP 3.0S</span>
+        </div>
+
+        <!-- Subdeck 1: Segment Parameters -->
+        <div class="mode-subdeck active" id="subdeckSegment">
+          <div class="stepper-row">
+            <div>
+              <div class="stepper-label">分割片段数量</div>
+              <div class="stepper-desc" id="partsDescText">均等分割目标段数 (每段约 5分17秒)</div>
+            </div>
+            <div class="stepper-control">
+              <button class="step-btn" onclick="adjustParts(-1)">-</button>
+              <input class="step-value-input" id="inputParts" value="8" onchange="onParamChange()">
+              <button class="step-btn" onclick="adjustParts(1)">+</button>
+            </div>
+          </div>
+
+          <div class="stepper-row">
+            <div>
+              <div class="stepper-label">前置重叠过渡时间</div>
+              <div class="stepper-desc">上一段末尾与本段开头的衔接冗余</div>
+            </div>
+            <div class="stepper-control">
+              <button class="step-btn" onclick="adjustOverlap(-1)">-</button>
+              <input class="step-value-input" id="inputOverlap" value="3.0s" onchange="onParamChange()">
+              <button class="step-btn" onclick="adjustOverlap(1)">+</button>
+            </div>
+          </div>
+
+          <div class="quick-preset-chips">
+            <span class="preset-pill active" onclick="applyPreset('parts', 8)">均匀 8 份</span>
+            <span class="preset-pill" onclick="applyPreset('parts', 4)">均匀 4 份</span>
+            <span class="preset-pill" onclick="applyPreset('parts', 12)">均匀 12 份</span>
+            <span class="preset-pill" onclick="applyPreset('short', 60)">短视频 60s</span>
+          </div>
+        </div>
+
+        <!-- Subdeck 2: Clip Parameters -->
+        <div class="mode-subdeck" id="subdeckClip">
+          <div class="time-input-group">
+            <div class="time-field-box">
+              <span class="time-field-label">开始时间 (秒 或 时:分:秒)</span>
+              <input class="time-text-input" id="inputClipStart" value="00:05:14.00" onchange="updateClipTimeline()">
+            </div>
+            <div class="time-field-box">
+              <span class="time-field-label">结束时间 (秒 或 时:分:秒)</span>
+              <input class="time-text-input" id="inputClipEnd" value="00:10:34.00" onchange="updateClipTimeline()">
+            </div>
+          </div>
+
+          <div style="font-size: 11px; color: var(--text-sub); line-height: 1.5;">
+            💡 支持直接输入纯秒数（如 <code style="color:var(--neon-cyan)">37.30</code>）或完整时间码（如 <code style="color:var(--neon-cyan)">00:05:14.00</code>），系统将自动进行区间合法性校验。
+          </div>
+
+          <div class="quick-preset-chips">
+            <span class="preset-pill" onclick="setClipStartHead()">设当前游标为起点</span>
+            <span class="preset-pill" onclick="setClipEndHead()">设当前游标为终点</span>
+          </div>
+        </div>
+
+        <!-- Subdeck 3: Merge Parameters -->
+        <div class="mode-subdeck" id="subdeckMerge">
+          <div class="merge-inputs-group">
+            <button class="btn-replace-media" onclick="chooseMergeFolder()" style="margin-bottom: 6px;">
+              📁 选择包含分段音视频的文件夹
+            </button>
+            <div class="file-meta-row">
+              <span class="meta-key-muted">合并文件夹</span>
+              <span class="meta-val-white" id="infoMergeFolder" style="font-size: 10px; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">未选择</span>
+            </div>
+            <div class="file-meta-row">
+              <span class="meta-key-muted">合并文件名</span>
+              <input class="time-text-input" id="inputMergeName" value="merged_output.mp3" style="width: 140px; padding: 3px 6px; font-size: 11px;">
+            </div>
+            <label class="merge-checkbox-row">
+              <input type="checkbox" id="chkSafeMerge">
+              <span>安全合并模式 (强制统一转码，解决无声或速度异常)</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Col 3: Render Engine -->
+      <div class="deck-card">
+        <div class="card-heading">
+          <span>03 导出与执行引擎</span>
+          <span style="color: var(--neon-green);" id="engineStatusTag">READY</span>
+        </div>
+        <div class="export-right-body">
+          <div class="codec-toggle-box">
+            <span>编码模式:</span>
+            <span class="tag-lossless">⚡ 无损流拷贝 (-c copy)</span>
+          </div>
+
+          <button class="btn-render-neon" id="btnStartAction" onclick="handleStartAction()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#000"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span id="btnStartText">开始无损极速切片</span>
+          </button>
+
+          <div class="progress-hud-box">
+            <div class="progress-info-row">
+              <span style="color: var(--neon-cyan);" id="statusText">就绪 · 等待执行</span>
+              <span id="progressPercent">0%</span>
+            </div>
+            <div class="pro-progress-track">
+              <div class="pro-progress-fill" id="progressBarFill"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Pro Toast -->
+  <div class="pro-toast" id="proToast">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--neon-green)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    <span id="toastMsg">处理已顺利完成！</span>
+  </div>
+
+  <script>
+    // State management
+    const state = {
+      mode: 'segment', // 'segment' | 'clip' | 'merge'
+      filePath: 'podcast_ep12_deep_learning_interview.mp3',
+      fileName: 'podcast_ep12_deep_learning_interview.mp3',
+      duration: 2538, // 42m 18s in seconds
+      fileSize: 61239120, // ~58.4MB
+      isVideo: false,
+      width: 0,
+      height: 0,
+      parts: 8,
+      overlap: 3.0,
+      clipStart: '00:05:14.00',
+      clipEnd: '00:10:34.00',
+      outputDir: '',
+      mergeFolder: '',
+      isProcessing: false
+    };
+
+    // Initialize UI
+    window.addEventListener('DOMContentLoaded', () => {
+      renderSliceGrid();
+      updateInfoDisplay();
+    });
+
+    // Switch mode
+    function switchMode(newMode) {
+      state.mode = newMode;
+      document.querySelectorAll('.mode-tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.mode-subdeck').forEach(deck => deck.classList.remove('active'));
+
+      const clipRange = document.getElementById('clipRangeOverlay');
+      const sliceGrid = document.getElementById('sliceGridOverlay');
+
+      if (newMode === 'segment') {
+        document.getElementById('btnModeSegment').classList.add('active');
+        document.getElementById('subdeckSegment').classList.add('active');
+        document.getElementById('col2HeadingTitle').innerText = '02 智能切片参数';
+        document.getElementById('col2HeadingTag').innerText = `OVERLAP ${state.overlap}S`;
+        document.getElementById('btnStartText').innerText = '开始无损极速切片';
+        clipRange.classList.remove('active');
+        sliceGrid.style.display = 'grid';
+      } else if (newMode === 'clip') {
+        document.getElementById('btnModeClip').classList.add('active');
+        document.getElementById('subdeckClip').classList.add('active');
+        document.getElementById('col2HeadingTitle').innerText = '02 精准截取区间';
+        document.getElementById('col2HeadingTag').innerText = 'TIMECODE RANGE';
+        document.getElementById('btnStartText').innerText = '开始截取目标区间';
+        clipRange.classList.add('active');
+        sliceGrid.style.display = 'none';
+        updateClipTimeline();
+      } else if (newMode === 'merge') {
+        document.getElementById('btnModeMerge').classList.add('active');
+        document.getElementById('subdeckMerge').classList.add('active');
+        document.getElementById('col2HeadingTitle').innerText = '02 批量合并配置';
+        document.getElementById('col2HeadingTag').innerText = 'CONCAT STREAM';
+        document.getElementById('btnStartText').innerText = '开始批量无损合并';
+        clipRange.classList.remove('active');
+        sliceGrid.style.display = 'none';
+      }
+    }
+
+    // Adjust parts stepper
+    function adjustParts(delta) {
+      let p = parseInt(document.getElementById('inputParts').value) || 8;
+      p = Math.max(2, Math.min(64, p + delta));
+      document.getElementById('inputParts').value = p;
+      state.parts = p;
+      onParamChange();
+    }
+
+    // Adjust overlap stepper
+    function adjustOverlap(delta) {
+      let o = parseFloat(document.getElementById('inputOverlap').value) || 3.0;
+      o = Math.max(0, Math.min(30, o + delta));
+      document.getElementById('inputOverlap').value = o.toFixed(1) + 's';
+      state.overlap = o;
+      onParamChange();
+    }
+
+    function onParamChange() {
+      state.parts = parseInt(document.getElementById('inputParts').value) || 8;
+      const oVal = document.getElementById('inputOverlap').value.replace('s', '');
+      state.overlap = parseFloat(oVal) || 0;
+      document.getElementById('col2HeadingTag').innerText = `OVERLAP ${state.overlap}S`;
+      
+      const partDuration = Math.round(state.duration / state.parts);
+      const mins = Math.floor(partDuration / 60);
+      const secs = partDuration % 60;
+      document.getElementById('partsDescText').innerText = `均等分割目标段数 (每段约 ${mins}分${secs}秒)`;
+      renderSliceGrid();
+    }
+
+    function applyPreset(type, val) {
+      if (type === 'parts') {
+        state.parts = val;
+        document.getElementById('inputParts').value = val;
+      } else if (type === 'short') {
+        // e.g. 60s
+        const calculatedParts = Math.max(2, Math.round(state.duration / 60));
+        state.parts = calculatedParts;
+        document.getElementById('inputParts').value = calculatedParts;
+      }
+      onParamChange();
+    }
+
+    // Render Slice Grid based on state.parts and state.overlap
+    function renderSliceGrid() {
+      const container = document.getElementById('sliceGridOverlay');
+      container.innerHTML = '';
+      container.style.gridTemplateColumns = `repeat(${state.parts}, 1fr)`;
+
+      const partSecs = state.duration / state.parts;
+
+      for (let i = 1; i <= state.parts; i++) {
+        const block = document.createElement('div');
+        block.className = 'slice-block';
+
+        const chip = document.createElement('span');
+        chip.className = 'slice-chip';
+        chip.innerText = `PART ${i < 10 ? '0' + i : i}`;
+
+        const timeLabel = document.createElement('span');
+        timeLabel.className = 'slice-time-label';
+        const start = formatTimecode((i - 1) * partSecs, false);
+        const end = formatTimecode(i * partSecs, false);
+        timeLabel.innerText = `${start} - ${end}`;
+
+        block.appendChild(chip);
+
+        if (state.overlap > 0 && i < state.parts) {
+          const overlapZone = document.createElement('div');
+          overlapZone.className = 'slice-overlap-zone';
+          overlapZone.title = `前置重叠 ${state.overlap}s`;
+          const overlapPercent = Math.min(30, (state.overlap / partSecs) * 100);
+          overlapZone.style.width = Math.max(8, overlapPercent) + '%';
+          block.appendChild(overlapZone);
+        }
+
+        block.appendChild(timeLabel);
+        container.appendChild(block);
+      }
+    }
+
+    // Helper format timecode
+    function formatTimecode(seconds, full = true) {
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = Math.floor(seconds % 60);
+      const ms = Math.floor((seconds % 1) * 100);
+
+      const mm = m < 10 ? '0' + m : m;
+      const ss = s < 10 ? '0' + s : s;
+      const mss = ms < 10 ? '0' + ms : ms;
+
+      if (full) {
+        const hh = h < 10 ? '0' + h : h;
+        return `${hh}:${mm}:${ss}.${mss}`;
+      } else {
+        return `${mm}:${ss}`;
+      }
+    }
+
+    // Helper format size
+    function formatBytes(bytes) {
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+      return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+    }
+
+    function updateInfoDisplay() {
+      document.getElementById('hudFileName').innerText = state.fileName;
+      document.getElementById('infoDuration').innerText = `${Math.floor(state.duration / 60)}分${Math.floor(state.duration % 60)}秒 (${state.duration}s)`;
+      document.getElementById('hudTotalDuration').innerText = formatTimecode(state.duration, true);
+      document.getElementById('infoSize').innerText = formatBytes(state.fileSize);
+      document.getElementById('hudFileSize').innerText = formatBytes(state.fileSize);
+      document.getElementById('infoOutputDir').innerText = state.outputDir || '默认与源文件同目录';
+
+      if (state.isVideo) {
+        document.getElementById('mediaTypeBadge').innerText = 'VIDEO / MP4';
+        document.getElementById('hudChannels').innerText = `${state.width}x${state.height}`;
+        document.getElementById('infoFileExt').innerText = `.mp4 (${state.width}x${state.height})`;
+      } else {
+        document.getElementById('mediaTypeBadge').innerText = 'AUDIO / MP3';
+        document.getElementById('hudChannels').innerText = 'Stereo';
+        document.getElementById('infoFileExt').innerText = '.mp3 (Audio)';
+      }
+    }
+
+    // Update clip timeline overlay position
+    function updateClipTimeline() {
+      const startSec = parseTimeStrToSeconds(document.getElementById('inputClipStart').value) || 0;
+      const endSec = parseTimeStrToSeconds(document.getElementById('inputClipEnd').value) || state.duration;
+
+      const leftPercent = Math.max(0, Math.min(100, (startSec / state.duration) * 100));
+      const rightPercent = Math.max(0, Math.min(100, (endSec / state.duration) * 100));
+      const widthPercent = Math.max(1, rightPercent - leftPercent);
+
+      const overlay = document.getElementById('clipRangeOverlay');
+      overlay.style.left = leftPercent + '%';
+      overlay.style.width = widthPercent + '%';
+
+      const clipDurationSec = Math.max(0, endSec - startSec);
+      document.getElementById('clipDurationBadge').innerText = `选区: ${formatTimecode(clipDurationSec, true)}`;
+    }
+
+    function parseTimeStrToSeconds(str) {
+      if (!str) return 0;
+      str = str.trim();
+      if (str.includes(':')) {
+        const parts = str.split(':');
+        if (parts.length === 3) return parseFloat(parts[0]) * 3600 + parseFloat(parts[1]) * 60 + parseFloat(parts[2]);
+        if (parts.length === 2) return parseFloat(parts[0]) * 60 + parseFloat(parts[1]);
+      }
+      return parseFloat(str) || 0;
+    }
+
+    function setClipStartHead() {
+      // simulate 25%
+      const sec = state.duration * 0.25;
+      document.getElementById('inputClipStart').value = formatTimecode(sec, true);
+      updateClipTimeline();
+    }
+
+    function setClipEndHead() {
+      // simulate 65%
+      const sec = state.duration * 0.65;
+      document.getElementById('inputClipEnd').value = formatTimecode(sec, true);
+      updateClipTimeline();
+    }
+
+    // Toast
+    function showToast(msg) {
+      const toast = document.getElementById('proToast');
+      document.getElementById('toastMsg').innerText = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 3500);
+    }
+
+    // Python Native Bridge Invocation
+    async function chooseFile() {
+      if (window.pywebview && window.pywebview.api) {
+        const res = await window.pywebview.api.select_file();
+        if (res) {
+          onFileLoaded(res);
+        }
+      } else {
+        // Mock fallback for browser preview
+        showToast('已模拟载入新媒体文件：podcast_ep12.mp3');
+      }
+    }
+
+    async function chooseMergeFolder() {
+      if (window.pywebview && window.pywebview.api) {
+        const res = await window.pywebview.api.select_folder();
+        if (res) {
+          state.mergeFolder = res;
+          document.getElementById('infoMergeFolder').innerText = res;
+        }
+      } else {
+        state.mergeFolder = 'C:/code/media_segmenter/clips/';
+        document.getElementById('infoMergeFolder').innerText = state.mergeFolder;
+        showToast('已选择合并文件夹');
+      }
+    }
+
+    async function openOutputFolder() {
+      if (window.pywebview && window.pywebview.api) {
+        await window.pywebview.api.open_folder(state.outputDir);
+      } else {
+        showToast('打开输出目录: ' + (state.outputDir || '默认目录'));
+      }
+    }
+
+    function onFileLoaded(info) {
+      state.filePath = info.path;
+      state.fileName = info.name;
+      state.duration = info.duration || 180;
+      state.fileSize = info.size || 1024 * 1024;
+      state.isVideo = !!info.is_video;
+      state.width = info.width || 0;
+      state.height = info.height || 0;
+      state.outputDir = info.output_dir || '';
+
+      updateInfoDisplay();
+      renderSliceGrid();
+      showToast(`已成功载入: ${info.name}`);
+    }
+
+    // Execution Trigger
+    async function handleStartAction() {
+      if (state.isProcessing) return;
+
+      state.isProcessing = true;
+      document.getElementById('btnStartAction').disabled = true;
+      document.getElementById('engineStatusTag').innerText = 'RUNNING';
+      document.getElementById('engineStatusTag').style.color = 'var(--neon-cyan)';
+
+      if (window.pywebview && window.pywebview.api) {
+        if (state.mode === 'segment') {
+          await window.pywebview.api.start_segment(state.parts, state.overlap);
+        } else if (state.mode === 'clip') {
+          const s = document.getElementById('inputClipStart').value;
+          const e = document.getElementById('inputClipEnd').value;
+          await window.pywebview.api.start_clip(s, e);
+        } else if (state.mode === 'merge') {
+          const outName = document.getElementById('inputMergeName').value;
+          const safeMode = document.getElementById('chkSafeMerge').checked;
+          await window.pywebview.api.start_merge(outName, safeMode);
+        }
+      } else {
+        // Mock progress animation for browser preview
+        let progress = 0;
+        const interval = setInterval(() => {
+          progress += 0.15;
+          if (progress >= 1.0) {
+            clearInterval(interval);
+            onProgressUpdate(1.0, '处理完成！全部片段已成功生成！');
+            onComplete(true, '切片处理完成！');
+          } else {
+            onProgressUpdate(progress, `正在极速切片: 第 ${Math.ceil(progress * state.parts)}/${state.parts} 段...`);
+          }
+        }, 300);
+      }
+    }
+
+    // Callbacks invoked from Python
+    window.onProgressUpdate = function(progress, status) {
+      const pct = Math.round(progress * 100) + '%';
+      document.getElementById('progressBarFill').style.width = pct;
+      document.getElementById('progressPercent').innerText = pct;
+      document.getElementById('statusText').innerText = status;
+    };
+
+    window.onComplete = function(success, message) {
+      state.isProcessing = false;
+      document.getElementById('btnStartAction').disabled = false;
+      document.getElementById('engineStatusTag').innerText = success ? 'COMPLETED' : 'ERROR';
+      document.getElementById('engineStatusTag').style.color = success ? 'var(--neon-green)' : 'var(--neon-rose)';
+      showToast(message || (success ? '任务完成！' : '处理失败，请查看日志'));
+    };
+  </script>
+</body>
+</html>

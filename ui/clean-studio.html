@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1280, initial-scale=1.0">
+  <title>极简工坊 · Modern Clean Studio (自然明亮·卡片工作台)</title>
+  <style>
+    :root {
+      --bg-base: #F8FAFC;
+      --bg-card: #FFFFFF;
+      --bg-subtle: #F1F5F9;
+      --text-main: #0F172A;
+      --text-sub: #475569;
+      --text-muted: #94A3B8;
+      --brand-indigo: #4F46E5;
+      --brand-indigo-light: #EEF2FF;
+      --brand-emerald: #10B981;
+      --brand-emerald-light: #ECFDF5;
+      --brand-amber: #F59E0B;
+      --border-card: #E2E8F0;
+      --shadow-soft: 0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 1px 3px rgba(15, 23, 42, 0.03);
+      --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", sans-serif;
+      --font-code: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      height: 820px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      padding: 16px 24px;
+      gap: 16px;
+    }
+
+    /* Top Bar */
+    .studio-header {
+      height: 64px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 14px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow-soft);
+      flex-shrink: 0;
+    }
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, #4F46E5, #7C3AED);
+      color: #FFF;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+    }
+    .brand-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    .brand-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Mode Pills */
+    .mode-pills-bar {
+      display: flex;
+      background: var(--bg-subtle);
+      border-radius: 10px;
+      padding: 4px;
+      gap: 6px;
+    }
+    .mode-pill-btn {
+      padding: 6px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-sub);
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+    .mode-pill-btn.active {
+      background: #FFF;
+      color: var(--brand-indigo);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+
+    .header-quick-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+    }
+    .badge-clean-env {
+      background: var(--brand-emerald-light);
+      color: var(--brand-emerald);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .dot-emerald { width: 6px; height: 6px; background: var(--brand-emerald); border-radius: 50%; }
+
+    /* Main Bento Stage (3 Steps) */
+    .studio-stage-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      overflow: hidden;
+    }
+
+    /* Left Big Column: Step 1 (Source File) */
+    .left-hero-column {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .clean-bento-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .card-step-badge {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .step-pill {
+      font-size: 11px;
+      font-weight: 700;
+      font-family: var(--font-code);
+      background: var(--brand-indigo-light);
+      color: var(--brand-indigo);
+      padding: 3px 10px;
+      border-radius: 6px;
+    }
+    .step-label {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    /* File Drop Showcase Card */
+    .media-hero-showcase {
+      background: linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 100%);
+      border: 2px dashed rgba(79, 70, 229, 0.3);
+      border-radius: 14px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 12px;
+      position: relative;
+    }
+    .media-big-icon-wrap {
+      width: 56px;
+      height: 56px;
+      background: #FFF;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--brand-indigo);
+      box-shadow: 0 4px 14px rgba(79, 70, 229, 0.15);
+    }
+    .media-file-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-main);
+      word-break: break-all;
+    }
+    .media-chips-row {
+      display: flex;
+      gap: 8px;
+    }
+    .hero-stat-chip {
+      font-size: 12px;
+      background: #FFF;
+      border: 1px solid var(--border-card);
+      padding: 3px 10px;
+      border-radius: 999px;
+      color: var(--text-sub);
+      font-family: var(--font-code);
+    }
+    .btn-choose-clean {
+      background: #FFF;
+      border: 1px solid var(--border-card);
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-main);
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      margin-top: 4px;
+    }
+    .btn-choose-clean:hover { border-color: var(--brand-indigo); color: var(--brand-indigo); }
+
+    /* Right Column: Step 2 & Step 3 */
+    .right-flow-column {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Preset Cards Grid */
+    .preset-selector-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    .preset-tile {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-card);
+      border-radius: 12px;
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .preset-tile:hover {
+      background: #FFF;
+      border-color: #CBD5E1;
+    }
+    .preset-tile.selected {
+      background: var(--brand-indigo-light);
+      border-color: var(--brand-indigo);
+      box-shadow: 0 2px 8px rgba(79, 70, 229, 0.12);
+    }
+    .preset-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+    .preset-tile.selected .preset-name {
+      color: var(--brand-indigo);
+    }
+    .preset-desc {
+      font-size: 11px;
+      color: var(--text-sub);
+    }
+
+    /* Overlap Card Row */
+    .overlap-box {
+      background: #FFFBEB;
+      border: 1px solid #FDE68A;
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .overlap-left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .overlap-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #B45309;
+    }
+    .overlap-hint {
+      font-size: 11px;
+      color: #92400E;
+    }
+    .overlap-badge-val {
+      font-size: 13px;
+      font-family: var(--font-code);
+      font-weight: 700;
+      background: #FFF;
+      padding: 4px 10px;
+      border-radius: 6px;
+      border: 1px solid #FDE68A;
+      color: #B45309;
+    }
+
+    /* Step 3: Action Deck */
+    .export-box-card {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .output-path-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-subtle);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+    .path-code-text {
+      font-family: var(--font-code);
+      color: var(--text-sub);
+    }
+    .btn-folder-change {
+      background: transparent;
+      border: none;
+      color: var(--brand-indigo);
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-launch-split {
+      height: 52px;
+      background: linear-gradient(135deg, #10B981, #059669);
+      color: #FFF;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+      transition: all 0.15s ease;
+    }
+    .btn-launch-split:hover {
+      box-shadow: 0 6px 22px rgba(16, 185, 129, 0.45);
+      transform: translateY(-1px);
+    }
+    .progress-clean-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .progress-clean-bar {
+      height: 8px;
+      background: var(--bg-subtle);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-clean-fill {
+      width: 50%;
+      height: 100%;
+      background: var(--brand-emerald);
+      border-radius: 4px;
+    }
+    .progress-clean-status {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="studio-header">
+    <div class="brand-group">
+      <div class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+      </div>
+      <div>
+        <div class="brand-title">MediaSegmenter Studio</div>
+        <div class="brand-subtitle">极简音视频智能处理工作台</div>
+      </div>
+    </div>
+
+    <!-- Mode Pills -->
+    <div class="mode-pills-bar">
+      <div class="mode-pill-btn active">
+        <span>⚡ 智能分割</span>
+      </div>
+      <div class="mode-pill-btn">
+        <span>🔗 批量合并</span>
+      </div>
+      <div class="mode-pill-btn">
+        <span>✂️ 精准截取</span>
+      </div>
+    </div>
+
+    <div class="header-quick-meta">
+      <div class="badge-clean-env">
+        <span class="dot-emerald"></span>
+        <span>FFmpeg Ready</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- 2-Column Bento Stage -->
+  <main class="studio-stage-grid">
+    <!-- Left Column: Source Media Hero -->
+    <div class="left-hero-column">
+      <div class="clean-bento-card" style="flex: 1;">
+        <div class="card-step-badge">
+          <span class="step-label">第一步 · 载入媒体源文件</span>
+          <span class="step-pill">STEP 01</span>
+        </div>
+
+        <div class="media-hero-showcase">
+          <div class="media-big-icon-wrap">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          </div>
+          <div class="media-file-title">podcast_ep12_deep_learning.mp3</div>
+          <div class="media-chips-row">
+            <span class="hero-stat-chip">时长: 42分18秒</span>
+            <span class="hero-stat-chip">大小: 58.4 MB</span>
+            <span class="hero-stat-chip">320kbps</span>
+          </div>
+          <button class="btn-choose-clean">📁 更换文件或拖入新媒体</button>
+        </div>
+
+        <div style="font-size: 12px; color: var(--text-sub); line-height: 1.6;">
+          <strong>💡 格式支持：</strong> MP3, WAV, M4A, FLAC, AAC 音频与 MP4, MKV, MOV 等视频。系统自动优先无损快速流切片（无需重编码，数秒内完成）。
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Step 2 & Step 3 -->
+    <div class="right-flow-column">
+      <!-- Step 2: Slice Presets -->
+      <div class="clean-bento-card">
+        <div class="card-step-badge">
+          <span class="step-label">第二步 · 切片规格与重叠参数</span>
+          <span class="step-pill">STEP 02</span>
+        </div>
+
+        <div class="preset-selector-grid">
+          <div class="preset-tile selected">
+            <span class="preset-name">均等 8 份 (推荐)</span>
+            <span class="preset-desc">每段约 5 分 17 秒，适合长播客转录</span>
+          </div>
+          <div class="preset-tile">
+            <span class="preset-name">短视频 60 秒切片</span>
+            <span class="preset-desc">针对抖音/小红书平台的短平快切块</span>
+          </div>
+          <div class="preset-tile">
+            <span class="preset-name">10 分钟章节切片</span>
+            <span class="preset-desc">适合 YouTube/长视频章节分割</span>
+          </div>
+          <div class="preset-tile">
+            <span class="preset-name">自定义分段...</span>
+            <span class="preset-desc">手动输入分段数与区间秒数</span>
+          </div>
+        </div>
+
+        <!-- Overlap Explainer -->
+        <div class="overlap-box">
+          <div class="overlap-left">
+            <span class="overlap-title">前置重叠过渡 (Overlap): 3.0 秒</span>
+            <span class="overlap-hint">每段起始前置3秒上一段结尾，防止听众在切片处遗漏首尾关键语义</span>
+          </div>
+          <span class="overlap-badge-val">3.0s</span>
+        </div>
+      </div>
+
+      <!-- Step 3: Export & Run -->
+      <div class="clean-bento-card export-box-card">
+        <div class="card-step-badge">
+          <span class="step-label">第三步 · 导出与启动</span>
+          <span class="step-pill">STEP 03</span>
+        </div>
+
+        <div class="output-path-row">
+          <div>
+            <span style="color: var(--text-muted); font-size: 11px;">输出路径: </span>
+            <span class="path-code-text">C:/code/media_segmenter/output/</span>
+          </div>
+          <button class="btn-folder-change">更改目录</button>
+        </div>
+
+        <button class="btn-launch-split">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <span>🚀 启动无损极速分割 (生成 8 段)</span>
+        </button>
+
+        <div class="progress-clean-wrapper">
+          <div class="progress-clean-bar">
+            <div class="progress-clean-fill"></div>
+          </div>
+          <div class="progress-clean-status">
+            <span>正在分割: 第 4/8 段 (podcast_ep12_part04.mp3)...</span>
+            <span style="font-family: var(--font-code); font-weight: 600; color: var(--brand-emerald);">50%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

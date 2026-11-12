@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1280, initial-scale=1.0">
+  <title>纯白秩序工坊 · Modern Clean Light (严格保持原结构)</title>
+  <style>
+    :root {
+      --bg-desktop: #E2E8F0;
+      --bg-window: #FFFFFF;
+      --bg-subtle: #F8FAFC;
+      --bg-input: #FFFFFF;
+      --border-card: #E2E8F0;
+      --border-focus: #4F46E5;
+      --accent-brand: #4F46E5;
+      --accent-green: #10B981;
+      --accent-green-hover: #059669;
+      --text-primary: #0F172A;
+      --text-secondary: #475569;
+      --text-muted: #94A3B8;
+      --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif;
+      --font-mono: "JetBrains Mono", Consolas, monospace;
+      --shadow-window: 0 20px 40px -10px rgba(15, 23, 42, 0.15), 0 0 0 1px rgba(15, 23, 42, 0.05);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-desktop);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      height: 820px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+
+    /* Fixed 620x720 App Window */
+    .app-window {
+      width: 620px;
+      height: 720px;
+      background-color: var(--bg-window);
+      border-radius: 16px;
+      box-shadow: var(--shadow-window);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Titlebar */
+    .window-titlebar {
+      height: 46px;
+      background-color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      border-bottom: 1px solid var(--border-card);
+    }
+    .title-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .app-icon {
+      width: 22px;
+      height: 22px;
+      background: linear-gradient(135deg, #4F46E5, #7C3AED);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FFF;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .app-title-text {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .window-controls {
+      display: flex;
+      gap: 8px;
+    }
+    .win-btn {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #CBD5E1;
+    }
+
+    /* Main Container */
+    .main-container {
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      gap: 14px;
+    }
+
+    /* Outer Main Tabs */
+    .outer-tabs-row {
+      display: flex;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-card);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 4px;
+    }
+    .outer-tab-btn {
+      flex: 1;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .outer-tab-btn.active {
+      background: #FFFFFF;
+      color: var(--accent-brand);
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+    }
+
+    /* Inner Sub Card Container */
+    .inner-panel-card {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-card);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      gap: 14px;
+    }
+
+    /* Inner Sub Tabs */
+    .inner-tabs-row {
+      display: flex;
+      background: #FFFFFF;
+      border: 1px solid var(--border-card);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 3px;
+    }
+    .inner-tab-btn {
+      flex: 1;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      border-radius: 6px;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.12s ease;
+    }
+    .inner-tab-btn.active {
+      background: var(--bg-subtle);
+      color: var(--accent-brand);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+    }
+
+    /* Form Body */
+    .form-content {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      gap: 14px;
+      padding-top: 4px;
+      justify-content: space-between;
+    }
+
+    /* File Input Card */
+    .file-input-card {
+      background: #FFFFFF;
+      border: 1px solid var(--border-card);
+      border-radius: 10px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .file-status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+    }
+    .file-name-text {
+      font-family: var(--font-mono);
+      color: var(--text-primary);
+      font-weight: 600;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 380px;
+    }
+    .file-size-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--accent-brand);
+      background: #EEF2FF;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+    .btn-select-file {
+      height: 40px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-card);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+    }
+    .btn-select-file:hover {
+      border-color: var(--accent-brand);
+      color: var(--accent-brand);
+      background: #FFF;
+    }
+
+    /* Parameters Cluster */
+    .params-cluster {
+      background: #FFFFFF;
+      border: 1px solid var(--border-card);
+      border-radius: 10px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .param-field-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .param-field-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .param-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .param-hint {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .clean-num-input {
+      width: 100px;
+      height: 34px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-card);
+      border-radius: 6px;
+      color: var(--accent-brand);
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 700;
+      text-align: center;
+      outline: none;
+    }
+    .clean-num-input:focus {
+      border-color: var(--accent-brand);
+      background: #FFF;
+    }
+
+    /* Outdir Row */
+    .outdir-row {
+      background: #FFFFFF;
+      border: 1px solid var(--border-card);
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .outdir-left {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      max-width: 380px;
+    }
+    .outdir-label {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .outdir-path {
+      font-size: 12px;
+      font-family: var(--font-mono);
+      color: var(--text-secondary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .btn-change-dir {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-card);
+      padding: 6px 14px;
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .btn-change-dir:hover { border-color: var(--accent-brand); color: var(--accent-brand); }
+
+    /* Action Deck */
+    .action-bottom-deck {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .btn-action-start {
+      height: 48px;
+      background: linear-gradient(135deg, #10B981, #059669);
+      color: #FFF;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+      transition: all 0.15s ease;
+    }
+    .btn-action-start:hover {
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+      transform: translateY(-1px);
+    }
+
+    .progress-box {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .progress-bar-track {
+      height: 6px;
+      background: #E2E8F0;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      width: 50%;
+      height: 100%;
+      background: var(--accent-green);
+      border-radius: 3px;
+    }
+    .status-msg-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-window">
+    <div class="window-titlebar">
+      <div class="title-left">
+        <div class="app-icon">✂</div>
+        <span class="app-title-text">MediaSegmenter · 音视频切片工具</span>
+      </div>
+      <div class="window-controls">
+        <span class="win-btn"></span>
+        <span class="win-btn"></span>
+        <span class="win-btn"></span>
+      </div>
+    </div>
+
+    <div class="main-container">
+      <!-- 1. Outer Main Tabs -->
+      <div class="outer-tabs-row">
+        <div class="outer-tab-btn active">
+          <span>🎧 音频处理</span>
+        </div>
+        <div class="outer-tab-btn">
+          <span>🎬 视频处理</span>
+        </div>
+      </div>
+
+      <!-- 2. Inner Panel -->
+      <div class="inner-panel-card">
+        <div class="inner-tabs-row">
+          <div class="inner-tab-btn active">音频分割</div>
+          <div class="inner-tab-btn">音频合并</div>
+          <div class="inner-tab-btn">音频截取</div>
+        </div>
+
+        <!-- 3. Form Content -->
+        <div class="form-content">
+          <div class="file-input-card">
+            <div class="file-status-row">
+              <span class="file-name-text">podcast_interview_ep12.mp3</span>
+              <span class="file-size-tag">58.4 MB · 42:18</span>
+            </div>
+            <button class="btn-select-file">
+              <span>📁 选择媒体文件</span>
+            </button>
+          </div>
+
+          <div class="params-cluster">
+            <div class="param-field-row">
+              <div class="param-field-info">
+                <span class="param-title">分割数量 (每段):</span>
+                <span class="param-hint">目标均等分段数 (当前每段约 5分17秒)</span>
+              </div>
+              <input class="clean-num-input" value="8">
+            </div>
+
+            <div class="param-field-row">
+              <div class="param-field-info">
+                <span class="param-title">前置重叠时间 (秒):</span>
+                <span class="param-hint">每段起始预留前置冗余，防止丢失首尾语音</span>
+              </div>
+              <input class="clean-num-input" value="3.0">
+            </div>
+          </div>
+
+          <div class="outdir-row">
+            <div class="outdir-left">
+              <span class="outdir-label">输出文件夹:</span>
+              <span class="outdir-path">C:/code/media_segmenter/output/</span>
+            </div>
+            <button class="btn-change-dir">选择输出文件夹</button>
+          </div>
+
+          <div class="action-bottom-deck">
+            <button class="btn-action-start">
+              <span>🚀 开始无损分割</span>
+            </button>
+
+            <div class="progress-box">
+              <div class="progress-bar-track">
+                <div class="progress-bar-fill"></div>
+              </div>
+              <div class="status-msg-row">
+                <span>正在分割: 第 4/8 段 (podcast_ep12_part04.mp3)...</span>
+                <span style="font-family: var(--font-mono); font-weight: 600; color: var(--accent-green);">50%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

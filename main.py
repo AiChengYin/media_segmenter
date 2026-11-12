@@ -448,31 +448,75 @@ def clip_audio(input_file, output_file, start_time, end_time, progress_callback,
 class MediaSegmenterApp(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("音视频处理工具")
-        self.geometry("600x680")
+        ctk.set_appearance_mode("Light")
+        ctk.set_default_color_theme("blue")
+        
+        self.title("音视频处理工具 · Media Segmenter")
+        self.geometry("640x730")
         self.resizable(False, False)
+        self.configure(fg_color="#F8FAFC")
         
-        self.main_tabview = ctk.CTkTabview(self)
-        self.main_tabview.pack(padx=20, pady=(10, 20), fill="both", expand=True)
+        # Outer main tabview
+        self.main_tabview = ctk.CTkTabview(
+            self,
+            fg_color="#FFFFFF",
+            border_width=1,
+            border_color="#E2E8F0",
+            corner_radius=12,
+            segmented_button_fg_color="#F1F5F9",
+            segmented_button_selected_color="#4F46E5",
+            segmented_button_selected_hover_color="#4338CA",
+            segmented_button_unselected_color="#FFFFFF",
+            segmented_button_unselected_hover_color="#F8FAFC",
+            segmented_button_font=("Microsoft YaHei UI", 13, "bold"),
+        )
+        self.main_tabview.pack(padx=18, pady=(14, 18), fill="both", expand=True)
         
-        self.tab_audio = self.main_tabview.add("音频处理")
-        self.tab_video = self.main_tabview.add("视频处理")
+        self.tab_audio = self.main_tabview.add("🎵  音频处理")
+        self.tab_video = self.main_tabview.add("🎬  视频处理")
+        self._style_tabview_buttons(self.main_tabview, is_outer=True)
 
         # Audio sub-tabview
-        self.audio_tabview = ctk.CTkTabview(self.tab_audio)
-        self.audio_tabview.pack(padx=10, pady=10, fill="both", expand=True)
+        self.audio_tabview = ctk.CTkTabview(
+            self.tab_audio,
+            fg_color="#F8FAFC",
+            border_width=1,
+            border_color="#E2E8F0",
+            corner_radius=10,
+            segmented_button_fg_color="#FFFFFF",
+            segmented_button_selected_color="#EEF2FF",
+            segmented_button_selected_hover_color="#E0E7FF",
+            segmented_button_unselected_color="#F8FAFC",
+            segmented_button_unselected_hover_color="#F1F5F9",
+            segmented_button_font=("Microsoft YaHei UI", 12, "bold"),
+        )
+        self.audio_tabview.pack(padx=12, pady=12, fill="both", expand=True)
         
         self.tab_segment = self.audio_tabview.add("音频分割")
         self.tab_merge = self.audio_tabview.add("音频合并")
         self.tab_audio_clip = self.audio_tabview.add("音频截取")
+        self._style_tabview_buttons(self.audio_tabview, is_outer=False)
         
         # Video sub-tabview
-        self.video_tabview = ctk.CTkTabview(self.tab_video)
-        self.video_tabview.pack(padx=10, pady=10, fill="both", expand=True)
+        self.video_tabview = ctk.CTkTabview(
+            self.tab_video,
+            fg_color="#F8FAFC",
+            border_width=1,
+            border_color="#E2E8F0",
+            corner_radius=10,
+            segmented_button_fg_color="#FFFFFF",
+            segmented_button_selected_color="#EEF2FF",
+            segmented_button_selected_hover_color="#E0E7FF",
+            segmented_button_unselected_color="#F8FAFC",
+            segmented_button_unselected_hover_color="#F1F5F9",
+            segmented_button_font=("Microsoft YaHei UI", 12, "bold"),
+        )
+        self.video_tabview.pack(padx=12, pady=12, fill="both", expand=True)
         
         self.tab_video_segment = self.video_tabview.add("视频分割")
         self.tab_video_merge = self.video_tabview.add("视频合并")
         self.tab_video_clip = self.video_tabview.add("视频截取")
+        self._style_tabview_buttons(self.video_tabview, is_outer=False)
         
         self.setup_segment_tab()
         self.setup_merge_tab()
@@ -481,165 +525,322 @@ class MediaSegmenterApp(ctk.CTk):
         self.setup_video_clip_tab()
         self.setup_audio_clip_tab()
 
+    def _style_tabview_buttons(self, tv, is_outer=True):
+        sb = tv._segmented_button
+        sel_fg = "#4F46E5" if is_outer else "#EEF2FF"
+        sel_txt = "#FFFFFF" if is_outer else "#4F46E5"
+        unsel_fg = "#FFFFFF" if is_outer else "#F8FAFC"
+        unsel_txt = "#64748B"
+
+        orig_select = sb._select_button_by_value
+        orig_unselect = sb._unselect_button_by_value
+
+        def new_select(value):
+            orig_select(value)
+            if value in sb._buttons_dict:
+                sb._buttons_dict[value].configure(fg_color=sel_fg, text_color=sel_txt)
+
+        def new_unselect(value):
+            orig_unselect(value)
+            if value in sb._buttons_dict:
+                sb._buttons_dict[value].configure(fg_color=unsel_fg, text_color=unsel_txt)
+
+        sb._select_button_by_value = new_select
+        sb._unselect_button_by_value = new_unselect
+
+        for val, btn in sb._buttons_dict.items():
+            if val == sb._current_value:
+                btn.configure(fg_color=sel_fg, text_color=sel_txt)
+            else:
+                btn.configure(fg_color=unsel_fg, text_color=unsel_txt)
+
     def setup_segment_tab(self):
-        # Audio File Selection
-        self.lbl_file = ctk.CTkLabel(self.tab_segment, text="未选择媒体文件", font=("Microsoft YaHei UI", 13), text_color="gray")
-        self.lbl_file.pack(pady=(15, 5), padx=10, anchor="w")
+        tab = self.tab_segment
         
-        self.btn_select_file = ctk.CTkButton(self.tab_segment, text="选择媒体文件", command=self.select_file, height=36)
-        self.btn_select_file.pack(pady=(0, 10), padx=10, fill="x")
+        # 1. File Selection Card
+        card_file = ctk.CTkFrame(tab, fg_color="#FFFFFF", corner_radius=10, border_width=1, border_color="#E2E8F0")
+        card_file.pack(fill="x", padx=12, pady=(12, 8))
         
-        # Parameters Frame
-        self.frm_params = ctk.CTkFrame(self.tab_segment, fg_color="transparent")
-        self.frm_params.pack(pady=5, padx=10, fill="x")
+        lbl_file_header = ctk.CTkLabel(card_file, text="源媒体文件", font=("Microsoft YaHei UI", 11, "bold"), text_color="#94A3B8")
+        lbl_file_header.pack(anchor="w", padx=14, pady=(10, 2))
+        
+        self.lbl_file = ctk.CTkLabel(card_file, text="未选择媒体文件", font=("Microsoft YaHei UI", 12), text_color="#64748B")
+        self.lbl_file.pack(padx=14, pady=(0, 6), anchor="w")
+        
+        self.btn_select_file = ctk.CTkButton(
+            card_file, text="📁  选择媒体文件", command=self.select_file, height=36,
+            fg_color="#F8FAFC", hover_color="#EEF2FF", border_width=1, border_color="#CBD5E1",
+            text_color="#0F172A", font=("Microsoft YaHei UI", 12, "bold"), corner_radius=8
+        )
+        self.btn_select_file.pack(padx=14, pady=(0, 12), fill="x")
+        
+        # 2. Parameters Card
+        card_params = ctk.CTkFrame(tab, fg_color="#FFFFFF", corner_radius=10, border_width=1, border_color="#E2E8F0")
+        card_params.pack(fill="x", padx=12, pady=8)
+        
+        lbl_params_header = ctk.CTkLabel(card_params, text="分割参数设置", font=("Microsoft YaHei UI", 11, "bold"), text_color="#94A3B8")
+        lbl_params_header.pack(anchor="w", padx=14, pady=(10, 4))
+        
+        self.frm_params = ctk.CTkFrame(card_params, fg_color="transparent")
+        self.frm_params.pack(padx=14, pady=(0, 12), fill="x")
         self.frm_params.columnconfigure(0, weight=1)
-        self.frm_params.columnconfigure(1, weight=1)
+        self.frm_params.columnconfigure(1, weight=0)
         
-        self.lbl_parts = ctk.CTkLabel(self.frm_params, text="分割数量 (每段):", font=("Microsoft YaHei UI", 13))
-        self.lbl_parts.grid(row=0, column=0, padx=(0, 10), pady=10, sticky="e")
-        self.entry_parts = ctk.CTkEntry(self.frm_params, width=120, height=32)
+        self.lbl_parts = ctk.CTkLabel(self.frm_params, text="分割数量 (每段):", font=("Microsoft YaHei UI", 12), text_color="#1E293B")
+        self.lbl_parts.grid(row=0, column=0, pady=6, sticky="w")
+        self.entry_parts = ctk.CTkEntry(
+            self.frm_params, width=110, height=32, font=("Consolas", 13, "bold"),
+            text_color="#4F46E5", fg_color="#F8FAFC", border_color="#CBD5E1", border_width=1, corner_radius=6, justify="center"
+        )
         self.entry_parts.insert(0, "8")
-        self.entry_parts.grid(row=0, column=1, pady=10, sticky="w")
+        self.entry_parts.grid(row=0, column=1, pady=6, sticky="e")
         
-        self.lbl_overlap = ctk.CTkLabel(self.frm_params, text="前置重叠时间(秒):", font=("Microsoft YaHei UI", 13))
-        self.lbl_overlap.grid(row=1, column=0, padx=(0, 10), pady=10, sticky="e")
-        self.entry_overlap = ctk.CTkEntry(self.frm_params, width=120, height=32)
+        self.lbl_overlap = ctk.CTkLabel(self.frm_params, text="前置重叠时间 (秒):", font=("Microsoft YaHei UI", 12), text_color="#1E293B")
+        self.lbl_overlap.grid(row=1, column=0, pady=6, sticky="w")
+        self.entry_overlap = ctk.CTkEntry(
+            self.frm_params, width=110, height=32, font=("Consolas", 13, "bold"),
+            text_color="#4F46E5", fg_color="#F8FAFC", border_color="#CBD5E1", border_width=1, corner_radius=6, justify="center"
+        )
         self.entry_overlap.insert(0, "3")
-        self.entry_overlap.grid(row=1, column=1, pady=10, sticky="w")
+        self.entry_overlap.grid(row=1, column=1, pady=6, sticky="e")
         
-        # Output Dir Selection
-        self.lbl_outdir = ctk.CTkLabel(self.tab_segment, text="输出文件夹: 默认与源文件同目录", font=("Microsoft YaHei UI", 13), text_color="gray")
-        self.lbl_outdir.pack(pady=(10, 5), padx=10, anchor="w")
+        # 3. Output Dir Card
+        card_outdir = ctk.CTkFrame(tab, fg_color="#FFFFFF", corner_radius=10, border_width=1, border_color="#E2E8F0")
+        card_outdir.pack(fill="x", padx=12, pady=8)
         
-        self.btn_select_outdir = ctk.CTkButton(self.tab_segment, text="选择输出文件夹", command=self.select_outdir, height=36, fg_color="#6c757d", hover_color="#5a6268")
-        self.btn_select_outdir.pack(pady=(0, 10), padx=10, fill="x")
+        lbl_out_header = ctk.CTkLabel(card_outdir, text="输出位置", font=("Microsoft YaHei UI", 11, "bold"), text_color="#94A3B8")
+        lbl_out_header.pack(anchor="w", padx=14, pady=(10, 2))
         
-        # Action
-        self.btn_start_segment = ctk.CTkButton(self.tab_segment, text="开始分割", command=self.start_processing, height=45, font=("Microsoft YaHei UI", 15, "bold"), fg_color="#28a745", hover_color="#218838")
-        self.btn_start_segment.pack(pady=(10, 10), padx=10, fill="x")
+        self.lbl_outdir = ctk.CTkLabel(card_outdir, text="输出文件夹: 默认与源文件同目录", font=("Microsoft YaHei UI", 12), text_color="#64748B")
+        self.lbl_outdir.pack(padx=14, pady=(0, 6), anchor="w")
         
-        # Progress
-        self.progress_bar = ctk.CTkProgressBar(self.tab_segment, height=10)
-        self.progress_bar.pack(pady=(5, 5), padx=10, fill="x")
+        self.btn_select_outdir = ctk.CTkButton(
+            card_outdir, text="📂  选择输出文件夹", command=self.select_outdir, height=36,
+            fg_color="#F8FAFC", hover_color="#EEF2FF", border_width=1, border_color="#CBD5E1",
+            text_color="#334155", font=("Microsoft YaHei UI", 12, "bold"), corner_radius=8
+        )
+        self.btn_select_outdir.pack(padx=14, pady=(0, 12), fill="x")
+        
+        # 4. Action & Progress
+        self.btn_start_segment = ctk.CTkButton(
+            tab, text="⚡  开始分割", command=self.start_processing, height=44,
+            font=("Microsoft YaHei UI", 14, "bold"), fg_color="#10B981", hover_color="#059669",
+            text_color="#FFFFFF", corner_radius=8
+        )
+        self.btn_start_segment.pack(padx=12, pady=(14, 8), fill="x")
+        
+        self.progress_bar = ctk.CTkProgressBar(tab, height=8, corner_radius=4, fg_color="#E2E8F0", progress_color="#10B981")
+        self.progress_bar.pack(padx=12, pady=4, fill="x")
         self.progress_bar.set(0)
         
-        self.lbl_status = ctk.CTkLabel(self.tab_segment, text="等待开始...", text_color="gray", font=("Microsoft YaHei UI", 12))
-        self.lbl_status.pack(pady=5)
+        self.lbl_status = ctk.CTkLabel(tab, text="就绪 · 等待任务开始", text_color="#64748B", font=("Microsoft YaHei UI", 12))
+        self.lbl_status.pack(pady=(4, 8))
         
         self.input_file = None
         self.output_dir = None
 
     def setup_merge_tab(self):
-        # Input Dir Selection
-        self.lbl_merge_indir = ctk.CTkLabel(self.tab_merge, text="未选择需要合并的媒体文件夹", font=("Microsoft YaHei UI", 13), text_color="gray")
-        self.lbl_merge_indir.pack(pady=(20, 5), padx=10, anchor="w")
+        tab = self.tab_merge
         
-        self.btn_select_merge_indir = ctk.CTkButton(self.tab_merge, text="选择输入文件夹", command=self.select_merge_indir, height=36)
-        self.btn_select_merge_indir.pack(pady=(0, 15), padx=10, fill="x")
+        card_indir = ctk.CTkFrame(tab, fg_color="#FFFFFF", corner_radius=10, border_width=1, border_color="#E2E8F0")
+        card_indir.pack(fill="x", padx=12, pady=(12, 8))
         
-        # Output File Selection (or Dir)
-        self.lbl_merge_outfile = ctk.CTkLabel(self.tab_merge, text="输出文件: 默认保存在输入文件夹内", font=("Microsoft YaHei UI", 13), text_color="gray")
-        self.lbl_merge_outfile.pack(pady=(15, 5), padx=10, anchor="w")
+        lbl_in_header = ctk.CTkLabel(card_indir, text="待合并媒体源", font=("Microsoft YaHei UI", 11, "bold"), text_color="#94A3B8")
+        lbl_in_header.pack(anchor="w", padx=14, pady=(10, 2))
         
-        # Options
-        self.frm_merge_params = ctk.CTkFrame(self.tab_merge, fg_color="transparent")
-        self.frm_merge_params.pack(pady=10, padx=10, fill="x")
+        self.lbl_merge_indir = ctk.CTkLabel(card_indir, text="未选择需要合并的媒体文件夹", font=("Microsoft YaHei UI", 12), text_color="#64748B")
+        self.lbl_merge_indir.pack(padx=14, pady=(0, 6), anchor="w")
         
-        self.lbl_merge_name = ctk.CTkLabel(self.frm_merge_params, text="合并后文件名:", font=("Microsoft YaHei UI", 13))
-        self.lbl_merge_name.pack(side="left", padx=(0, 10))
-        self.entry_merge_name = ctk.CTkEntry(self.frm_merge_params, width=150, height=32)
+        self.btn_select_merge_indir = ctk.CTkButton(
+            card_indir, text="📁  选择输入文件夹", command=self.select_merge_indir, height=36,
+            fg_color="#F8FAFC", hover_color="#EEF2FF", border_width=1, border_color="#CBD5E1",
+            text_color="#0F172A", font=("Microsoft YaHei UI", 12, "bold"), corner_radius=8
+        )
+        self.btn_select_merge_indir.pack(padx=14, pady=(0, 12), fill="x")
+        
+        card_merge = ctk.CTkFrame(tab, fg_color="#FFFFFF", corner_radius=10, border_width=1, border_color="#E2E8F0")
+        card_merge.pack(fill="x", padx=12, pady=8)
+        
+        lbl_merge_header = ctk.CTkLabel(card_merge, text="合并配置", font=("Microsoft YaHei UI", 11, "bold"), text_color="#94A3B8")
+        lbl_merge_header.pack(anchor="w", padx=14, pady=(10, 2))
+        
+        self.lbl_merge_outfile = ctk.CTkLabel(card_merge, text="输出位置: 默认保存在输入文件夹内", font=("Microsoft YaHei UI", 12), text_color="#64748B")
+        self.lbl_merge_outfile.pack(padx=14, pady=(0, 8), anchor="w")
+        
+        self.frm_merge_params = ctk.CTkFrame(card_merge, fg_color="transparent")
+        self.frm_merge_params.pack(padx=14, pady=4, fill="x")
+        self.frm_merge_params.columnconfigure(0, weight=1)
+        self.frm_merge_params.columnconfigure(1, weight=0)
+        
+        self.lbl_merge_name = ctk.CTkLabel(self.frm_merge_params, text="合并后文件名:", font=("Microsoft YaHei UI", 12), text_color="#1E293B")
+        self.lbl_merge_name.grid(row=0, column=0, sticky="w")
+        self.entry_merge_name = ctk.CTkEntry(
+            self.frm_merge_params, width=170, height=32, font=("Consolas", 12, "bold"),
+            text_color="#4F46E5", fg_color="#F8FAFC", border_color="#CBD5E1", border_width=1, corner_radius=6
+        )
         self.entry_merge_name.insert(0, "merged_output.mp3")
-        self.entry_merge_name.pack(side="left")
+        self.entry_merge_name.grid(row=0, column=1, sticky="e")
         
         self.var_safe_merge = ctk.BooleanVar(value=False)
-        self.chk_safe_merge = ctk.CTkCheckBox(self.tab_merge, text="安全合并模式 (强制统一编码，解决部分无声或加速问题)", variable=self.var_safe_merge, font=("Microsoft YaHei UI", 12))
-        self.chk_safe_merge.pack(pady=(5, 5), padx=10, anchor="w")
-
-        # Action
-        self.btn_start_merge = ctk.CTkButton(self.tab_merge, text="开始合并", command=self.start_merging, height=45, font=("Microsoft YaHei UI", 15, "bold"), fg_color="#28a745", hover_color="#218838")
-        self.btn_start_merge.pack(pady=(15, 10), padx=10, fill="x")
+        self.chk_safe_merge = ctk.CTkCheckBox(
+            card_merge, text="安全合并模式 (强制统一编码，解决无声或加速问题)",
+            variable=self.var_safe_merge, font=("Microsoft YaHei UI", 12),
+            fg_color="#4F46E5", hover_color="#4338CA", text_color="#334155"
+        )
+        self.chk_safe_merge.pack(padx=14, pady=(8, 12), anchor="w")
         
-        # Progress
-        self.merge_progress_bar = ctk.CTkProgressBar(self.tab_merge, height=10)
-        self.merge_progress_bar.pack(pady=(5, 5), padx=10, fill="x")
+        self.btn_start_merge = ctk.CTkButton(
+            tab, text="⚡  开始合并", command=self.start_merging, height=44,
+            font=("Microsoft YaHei UI", 14, "bold"), fg_color="#10B981", hover_color="#059669",
+            text_color="#FFFFFF", corner_radius=8
+        )
+        self.btn_start_merge.pack(padx=12, pady=(18, 8), fill="x")
+        
+        self.merge_progress_bar = ctk.CTkProgressBar(tab, height=8, corner_radius=4, fg_color="#E2E8F0", progress_color="#10B981")
+        self.merge_progress_bar.pack(padx=12, pady=4, fill="x")
         self.merge_progress_bar.set(0)
         
-        self.lbl_merge_status = ctk.CTkLabel(self.tab_merge, text="等待开始...", text_color="gray", font=("Microsoft YaHei UI", 12))
-        self.lbl_merge_status.pack(pady=5)
+        self.lbl_merge_status = ctk.CTkLabel(tab, text="就绪 · 等待任务开始", text_color="#64748B", font=("Microsoft YaHei UI", 12))
+        self.lbl_merge_status.pack(pady=(4, 8))
         
         self.merge_input_dir = None
 
     def setup_video_segment_tab(self):
-        self.lbl_vseg_file = ctk.CTkLabel(self.tab_video_segment, text="未选择视频文件", font=("Microsoft YaHei UI", 13), text_color="gray")
-        self.lbl_vseg_file.pack(pady=(15, 5), padx=10, anchor="w")
+        tab = self.tab_video_segment
         
-        self.btn_select_vseg_file = ctk.CTkButton(self.tab_video_segment, text="选择视频文件", command=self.select_vseg_file, height=36)
-        self.btn_select_vseg_file.pack(pady=(0, 10), padx=10, fill="x")
+        card_file = ctk.CTkFrame(tab, fg_color="#FFFFFF", corner_radius=10, border_width=1, border_color="#E2E8F0")
+        card_file.pack(fill="x", padx=12, pady=(12, 8))
         
-        self.frm_vseg_params = ctk.CTkFrame(self.tab_video_segment, fg_color="transparent")
-        self.frm_vseg_params.pack(pady=5, padx=10, fill="x")
+        lbl_file_header = ctk.CTkLabel(card_file, text="源视频文件", font=("Microsoft YaHei UI", 11, "bold"), text_color="#94A3B8")
+        lbl_file_header.pack(anchor="w", padx=14, pady=(10, 2))
+        
+        self.lbl_vseg_file = ctk.CTkLabel(card_file, text="未选择视频文件", font=("Microsoft YaHei UI", 12), text_color="#64748B")
+        self.lbl_vseg_file.pack(padx=14, pady=(0, 6), anchor="w")
+        
+        self.btn_select_vseg_file = ctk.CTkButton(
+            card_file, text="📁  选择视频文件", command=self.select_vseg_file, height=36,
+            fg_color="#F8FAFC", hover_color="#EEF2FF", border_width=1, border_color="#CBD5E1",
+            text_color="#0F172A", font=("Microsoft YaHei UI", 12, "bold"), corner_radius=8
+        )
+        self.btn_select_vseg_file.pack(padx=14, pady=(0, 12), fill="x")
+        
+        card_params = ctk.CTkFrame(tab, fg_color="#FFFFFF", corner_radius=10, border_width=1, border_color="#E2E8F0")
+        card_params.pack(fill="x", padx=12, pady=8)
+        
+        lbl_params_header = ctk.CTkLabel(card_params, text="分割参数设置", font=("Microsoft YaHei UI", 11, "bold"), text_color="#94A3B8")
+        lbl_params_header.pack(anchor="w", padx=14, pady=(10, 4))
+        
+        self.frm_vseg_params = ctk.CTkFrame(card_params, fg_color="transparent")
+        self.frm_vseg_params.pack(padx=14, pady=(0, 12), fill="x")
         self.frm_vseg_params.columnconfigure(0, weight=1)
-        self.frm_vseg_params.columnconfigure(1, weight=1)
+        self.frm_vseg_params.columnconfigure(1, weight=0)
         
-        self.lbl_vseg_parts = ctk.CTkLabel(self.frm_vseg_params, text="分割数量 (每段):", font=("Microsoft YaHei UI", 13))
-        self.lbl_vseg_parts.grid(row=0, column=0, padx=(0, 10), pady=10, sticky="e")
-        self.entry_vseg_parts = ctk.CTkEntry(self.frm_vseg_params, width=120, height=32)
+        self.lbl_vseg_parts = ctk.CTkLabel(self.frm_vseg_params, text="分割数量 (每段):", font=("Microsoft YaHei UI", 12), text_color="#1E293B")
+        self.lbl_vseg_parts.grid(row=0, column=0, pady=6, sticky="w")
+        self.entry_vseg_parts = ctk.CTkEntry(
+            self.frm_vseg_params, width=110, height=32, font=("Consolas", 13, "bold"),
+            text_color="#4F46E5", fg_color="#F8FAFC", border_color="#CBD5E1", border_width=1, corner_radius=6, justify="center"
+        )
         self.entry_vseg_parts.insert(0, "8")
-        self.entry_vseg_parts.grid(row=0, column=1, pady=10, sticky="w")
+        self.entry_vseg_parts.grid(row=0, column=1, pady=6, sticky="e")
         
-        self.lbl_vseg_overlap = ctk.CTkLabel(self.frm_vseg_params, text="前置重叠时间(秒):", font=("Microsoft YaHei UI", 13))
-        self.lbl_vseg_overlap.grid(row=1, column=0, padx=(0, 10), pady=10, sticky="e")
-        self.entry_vseg_overlap = ctk.CTkEntry(self.frm_vseg_params, width=120, height=32)
+        self.lbl_vseg_overlap = ctk.CTkLabel(self.frm_vseg_params, text="前置重叠时间 (秒):", font=("Microsoft YaHei UI", 12), text_color="#1E293B")
+        self.lbl_vseg_overlap.grid(row=1, column=0, pady=6, sticky="w")
+        self.entry_vseg_overlap = ctk.CTkEntry(
+            self.frm_vseg_params, width=110, height=32, font=("Consolas", 13, "bold"),
+            text_color="#4F46E5", fg_color="#F8FAFC", border_color="#CBD5E1", border_width=1, corner_radius=6, justify="center"
+        )
         self.entry_vseg_overlap.insert(0, "3")
-        self.entry_vseg_overlap.grid(row=1, column=1, pady=10, sticky="w")
+        self.entry_vseg_overlap.grid(row=1, column=1, pady=6, sticky="e")
         
-        self.lbl_vseg_outdir = ctk.CTkLabel(self.tab_video_segment, text="输出文件夹: 默认与源文件同目录", font=("Microsoft YaHei UI", 13), text_color="gray")
-        self.lbl_vseg_outdir.pack(pady=(10, 5), padx=10, anchor="w")
+        card_outdir = ctk.CTkFrame(tab, fg_color="#FFFFFF", corner_radius=10, border_width=1, border_color="#E2E8F0")
+        card_outdir.pack(fill="x", padx=12, pady=8)
         
-        self.btn_select_vseg_outdir = ctk.CTkButton(self.tab_video_segment, text="选择输出文件夹", command=self.select_vseg_outdir, height=36, fg_color="#6c757d", hover_color="#5a6268")
-        self.btn_select_vseg_outdir.pack(pady=(0, 10), padx=10, fill="x")
+        lbl_out_header = ctk.CTkLabel(card_outdir, text="输出位置", font=("Microsoft YaHei UI", 11, "bold"), text_color="#94A3B8")
+        lbl_out_header.pack(anchor="w", padx=14, pady=(10, 2))
         
-        self.btn_start_vseg = ctk.CTkButton(self.tab_video_segment, text="开始分割", command=self.start_vseg_processing, height=45, font=("Microsoft YaHei UI", 15, "bold"), fg_color="#28a745", hover_color="#218838")
-        self.btn_start_vseg.pack(pady=(10, 10), padx=10, fill="x")
+        self.lbl_vseg_outdir = ctk.CTkLabel(card_outdir, text="输出文件夹: 默认与源文件同目录", font=("Microsoft YaHei UI", 12), text_color="#64748B")
+        self.lbl_vseg_outdir.pack(padx=14, pady=(0, 6), anchor="w")
         
-        self.vseg_progress_bar = ctk.CTkProgressBar(self.tab_video_segment, height=10)
-        self.vseg_progress_bar.pack(pady=(5, 5), padx=10, fill="x")
+        self.btn_select_vseg_outdir = ctk.CTkButton(
+            card_outdir, text="📂  选择输出文件夹", command=self.select_vseg_outdir, height=36,
+            fg_color="#F8FAFC", hover_color="#EEF2FF", border_width=1, border_color="#CBD5E1",
+            text_color="#334155", font=("Microsoft YaHei UI", 12, "bold"), corner_radius=8
+        )
+        self.btn_select_vseg_outdir.pack(padx=14, pady=(0, 12), fill="x")
+        
+        self.btn_start_vseg = ctk.CTkButton(
+            tab, text="⚡  开始分割", command=self.start_vseg_processing, height=44,
+            font=("Microsoft YaHei UI", 14, "bold"), fg_color="#10B981", hover_color="#059669",
+            text_color="#FFFFFF", corner_radius=8
+        )
+        self.btn_start_vseg.pack(padx=12, pady=(14, 8), fill="x")
+        
+        self.vseg_progress_bar = ctk.CTkProgressBar(tab, height=8, corner_radius=4, fg_color="#E2E8F0", progress_color="#10B981")
+        self.vseg_progress_bar.pack(padx=12, pady=4, fill="x")
         self.vseg_progress_bar.set(0)
         
-        self.lbl_vseg_status = ctk.CTkLabel(self.tab_video_segment, text="等待开始...", text_color="gray", font=("Microsoft YaHei UI", 12))
-        self.lbl_vseg_status.pack(pady=5)
+        self.lbl_vseg_status = ctk.CTkLabel(tab, text="就绪 · 等待任务开始", text_color="#64748B", font=("Microsoft YaHei UI", 12))
+        self.lbl_vseg_status.pack(pady=(4, 8))
         
         self.vseg_input_file = None
         self.vseg_output_dir = None
 
     def setup_video_merge_tab(self):
-        self.lbl_vmerge_indir = ctk.CTkLabel(self.tab_video_merge, text="未选择需要合并的视频文件夹", font=("Microsoft YaHei UI", 13), text_color="gray")
-        self.lbl_vmerge_indir.pack(pady=(20, 5), padx=10, anchor="w")
+        tab = self.tab_video_merge
         
-        self.btn_select_vmerge_indir = ctk.CTkButton(self.tab_video_merge, text="选择输入文件夹", command=self.select_vmerge_indir, height=36)
-        self.btn_select_vmerge_indir.pack(pady=(0, 15), padx=10, fill="x")
+        card_indir = ctk.CTkFrame(tab, fg_color="#FFFFFF", corner_radius=10, border_width=1, border_color="#E2E8F0")
+        card_indir.pack(fill="x", padx=12, pady=(12, 8))
         
-        self.lbl_vmerge_outfile = ctk.CTkLabel(self.tab_video_merge, text="输出文件: 默认保存在输入文件夹内", font=("Microsoft YaHei UI", 13), text_color="gray")
-        self.lbl_vmerge_outfile.pack(pady=(15, 5), padx=10, anchor="w")
+        lbl_in_header = ctk.CTkLabel(card_indir, text="待合并视频源", font=("Microsoft YaHei UI", 11, "bold"), text_color="#94A3B8")
+        lbl_in_header.pack(anchor="w", padx=14, pady=(10, 2))
         
-        self.frm_vmerge_params = ctk.CTkFrame(self.tab_video_merge, fg_color="transparent")
-        self.frm_vmerge_params.pack(pady=10, padx=10, fill="x")
+        self.lbl_vmerge_indir = ctk.CTkLabel(card_indir, text="未选择需要合并的视频文件夹", font=("Microsoft YaHei UI", 12), text_color="#64748B")
+        self.lbl_vmerge_indir.pack(padx=14, pady=(0, 6), anchor="w")
         
-        self.lbl_vmerge_name = ctk.CTkLabel(self.frm_vmerge_params, text="合并后文件名:", font=("Microsoft YaHei UI", 13))
-        self.lbl_vmerge_name.pack(side="left", padx=(0, 10))
-        self.entry_vmerge_name = ctk.CTkEntry(self.frm_vmerge_params, width=150, height=32)
+        self.btn_select_vmerge_indir = ctk.CTkButton(
+            card_indir, text="📁  选择输入文件夹", command=self.select_vmerge_indir, height=36,
+            fg_color="#F8FAFC", hover_color="#EEF2FF", border_width=1, border_color="#CBD5E1",
+            text_color="#0F172A", font=("Microsoft YaHei UI", 12, "bold"), corner_radius=8
+        )
+        self.btn_select_vmerge_indir.pack(padx=14, pady=(0, 12), fill="x")
+        
+        card_merge = ctk.CTkFrame(tab, fg_color="#FFFFFF", corner_radius=10, border_width=1, border_color="#E2E8F0")
+        card_merge.pack(fill="x", padx=12, pady=8)
+        
+        lbl_merge_header = ctk.CTkLabel(card_merge, text="合并配置", font=("Microsoft YaHei UI", 11, "bold"), text_color="#94A3B8")
+        lbl_merge_header.pack(anchor="w", padx=14, pady=(10, 2))
+        
+        self.lbl_vmerge_outfile = ctk.CTkLabel(card_merge, text="输出位置: 默认保存在输入文件夹内", font=("Microsoft YaHei UI", 12), text_color="#64748B")
+        self.lbl_vmerge_outfile.pack(padx=14, pady=(0, 8), anchor="w")
+        
+        self.frm_vmerge_params = ctk.CTkFrame(card_merge, fg_color="transparent")
+        self.frm_vmerge_params.pack(padx=14, pady=(0, 12), fill="x")
+        self.frm_vmerge_params.columnconfigure(0, weight=1)
+        self.frm_vmerge_params.columnconfigure(1, weight=0)
+        
+        self.lbl_vmerge_name = ctk.CTkLabel(self.frm_vmerge_params, text="合并后文件名:", font=("Microsoft YaHei UI", 12), text_color="#1E293B")
+        self.lbl_vmerge_name.grid(row=0, column=0, sticky="w")
+        self.entry_vmerge_name = ctk.CTkEntry(
+            self.frm_vmerge_params, width=170, height=32, font=("Consolas", 12, "bold"),
+            text_color="#4F46E5", fg_color="#F8FAFC", border_color="#CBD5E1", border_width=1, corner_radius=6
+        )
         self.entry_vmerge_name.insert(0, "merged_output.mp4")
-        self.entry_vmerge_name.pack(side="left")
+        self.entry_vmerge_name.grid(row=0, column=1, sticky="e")
         
-        self.btn_start_vmerge = ctk.CTkButton(self.tab_video_merge, text="开始合并", command=self.start_vmerge, height=45, font=("Microsoft YaHei UI", 15, "bold"), fg_color="#28a745", hover_color="#218838")
-        self.btn_start_vmerge.pack(pady=(30, 10), padx=10, fill="x")
+        self.btn_start_vmerge = ctk.CTkButton(
+            tab, text="⚡  开始合并", command=self.start_vmerge, height=44,
+            font=("Microsoft YaHei UI", 14, "bold"), fg_color="#10B981", hover_color="#059669",
+            text_color="#FFFFFF", corner_radius=8
+        )
+        self.btn_start_vmerge.pack(padx=12, pady=(24, 8), fill="x")
         
-        self.vmerge_progress_bar = ctk.CTkProgressBar(self.tab_video_merge, height=10)
-        self.vmerge_progress_bar.pack(pady=(5, 5), padx=10, fill="x")
+        self.vmerge_progress_bar = ctk.CTkProgressBar(tab, height=8, corner_radius=4, fg_color="#E2E8F0", progress_color="#10B981")
+        self.vmerge_progress_bar.pack(padx=12, pady=4, fill="x")
         self.vmerge_progress_bar.set(0)
         
-        self.lbl_vmerge_status = ctk.CTkLabel(self.tab_video_merge, text="等待开始...", text_color="gray", font=("Microsoft YaHei UI", 12))
-        self.lbl_vmerge_status.pack(pady=5)
+        self.lbl_vmerge_status = ctk.CTkLabel(tab, text="就绪 · 等待任务开始", text_color="#64748B", font=("Microsoft YaHei UI", 12))
+        self.lbl_vmerge_status.pack(pady=(4, 8))
         
         self.vmerge_input_dir = None
 
@@ -653,14 +854,14 @@ class MediaSegmenterApp(ctk.CTk):
             short_name = os.path.basename(file_path)
             if len(short_name) > 30:
                 short_name = short_name[:15] + "..." + short_name[-10:]
-            self.lbl_file.configure(text=f"已选择: {short_name}", text_color=("black", "white"))
+            self.lbl_file.configure(text=f"已选择: {short_name}", text_color="#0F172A")
             
             if not self.output_dir:
                 self.output_dir = os.path.dirname(file_path)
                 out_short = self.output_dir
                 if len(out_short) > 35:
                     out_short = out_short[:15] + "..." + out_short[-15:]
-                self.lbl_outdir.configure(text=f"输出文件夹: {out_short}", text_color=("black", "white"))
+                self.lbl_outdir.configure(text=f"输出文件夹: {out_short}", text_color="#0F172A")
 
     def select_outdir(self):
         dir_path = filedialog.askdirectory(title="选择输出文件夹")
@@ -669,7 +870,7 @@ class MediaSegmenterApp(ctk.CTk):
             out_short = self.output_dir
             if len(out_short) > 35:
                 out_short = out_short[:15] + "..." + out_short[-15:]
-            self.lbl_outdir.configure(text=f"输出文件夹: {out_short}", text_color=("black", "white"))
+            self.lbl_outdir.configure(text=f"输出文件夹: {out_short}", text_color="#0F172A")
 
     def select_merge_indir(self):
         dir_path = filedialog.askdirectory(title="选择输入文件夹 (包含要合并的音视频)")
@@ -678,7 +879,7 @@ class MediaSegmenterApp(ctk.CTk):
             in_short = self.merge_input_dir
             if len(in_short) > 35:
                 in_short = in_short[:15] + "..." + in_short[-15:]
-            self.lbl_merge_indir.configure(text=f"输入文件夹: {in_short}", text_color=("black", "white"))
+            self.lbl_merge_indir.configure(text=f"输入文件夹: {in_short}", text_color="#0F172A")
 
     def start_processing(self):
         if not self.input_file:
@@ -694,14 +895,14 @@ class MediaSegmenterApp(ctk.CTk):
             messagebox.showwarning("提示", "分割数量需为正整数，重叠时间需为非负数！")
             return
             
-        self.btn_start_segment.configure(state="disabled", text="处理中...")
+        self.btn_start_segment.configure(state="disabled", text="⏳  处理中...")
         self.btn_select_file.configure(state="disabled")
         self.btn_select_outdir.configure(state="disabled")
         self.entry_parts.configure(state="disabled")
         self.entry_overlap.configure(state="disabled")
         
         self.progress_bar.set(0)
-        self.lbl_status.configure(text="正在获取媒体信息...", text_color="#17a2b8")
+        self.lbl_status.configure(text="正在获取媒体信息...", text_color="#4F46E5")
         
         threading.Thread(target=process_audio, args=(
             self.input_file, self.output_dir, num_parts, overlap,
@@ -721,12 +922,12 @@ class MediaSegmenterApp(ctk.CTk):
             
         output_file = os.path.join(self.merge_input_dir, output_name)
         
-        self.btn_start_merge.configure(state="disabled", text="处理中...")
+        self.btn_start_merge.configure(state="disabled", text="⏳  处理中...")
         self.btn_select_merge_indir.configure(state="disabled")
         self.entry_merge_name.configure(state="disabled")
         
         self.merge_progress_bar.set(0)
-        self.lbl_merge_status.configure(text="正在获取媒体列表...", text_color="#17a2b8")
+        self.lbl_merge_status.configure(text="正在获取媒体列表...", text_color="#4F46E5")
         
         threading.Thread(target=merge_audio, args=(
             self.merge_input_dir, output_file,
@@ -742,17 +943,17 @@ class MediaSegmenterApp(ctk.CTk):
         
     def on_complete(self, success):
         def _reset_ui():
-            self.btn_start_segment.configure(state="normal", text="开始分割")
+            self.btn_start_segment.configure(state="normal", text="⚡  开始分割")
             self.btn_select_file.configure(state="normal")
             self.btn_select_outdir.configure(state="normal")
             self.entry_parts.configure(state="normal")
             self.entry_overlap.configure(state="normal")
             
             if success:
-                self.lbl_status.configure(text_color="#28a745")
+                self.lbl_status.configure(text_color="#10B981")
                 messagebox.showinfo("成功", "分割已完成！")
             else:
-                self.lbl_status.configure(text_color="#dc3545")
+                self.lbl_status.configure(text_color="#EF4444")
                 messagebox.showerror("错误", "处理过程中发生错误，请查看提示。")
         self.after(0, _reset_ui)
 
@@ -764,15 +965,15 @@ class MediaSegmenterApp(ctk.CTk):
         
     def on_merge_complete(self, success):
         def _reset_ui():
-            self.btn_start_merge.configure(state="normal", text="开始合并")
+            self.btn_start_merge.configure(state="normal", text="⚡  开始合并")
             self.btn_select_merge_indir.configure(state="normal")
             self.entry_merge_name.configure(state="normal")
             
             if success:
-                self.lbl_merge_status.configure(text_color="#28a745")
+                self.lbl_merge_status.configure(text_color="#10B981")
                 messagebox.showinfo("成功", "合并已完成！")
             else:
-                self.lbl_merge_status.configure(text_color="#dc3545")
+                self.lbl_merge_status.configure(text_color="#EF4444")
                 messagebox.showerror("错误", "合并过程中发生错误，请查看提示。")
         self.after(0, _reset_ui)
 
@@ -786,14 +987,14 @@ class MediaSegmenterApp(ctk.CTk):
             short_name = os.path.basename(file_path)
             if len(short_name) > 30:
                 short_name = short_name[:15] + "..." + short_name[-10:]
-            self.lbl_vseg_file.configure(text=f"已选择: {short_name}", text_color=("black", "white"))
+            self.lbl_vseg_file.configure(text=f"已选择: {short_name}", text_color="#0F172A")
             
             if not self.vseg_output_dir:
                 self.vseg_output_dir = os.path.dirname(file_path)
                 out_short = self.vseg_output_dir
                 if len(out_short) > 35:
                     out_short = out_short[:15] + "..." + out_short[-15:]
-                self.lbl_vseg_outdir.configure(text=f"输出文件夹: {out_short}", text_color=("black", "white"))
+                self.lbl_vseg_outdir.configure(text=f"输出文件夹: {out_short}", text_color="#0F172A")
 
     def select_vseg_outdir(self):
         dir_path = filedialog.askdirectory(title="选择输出文件夹")
@@ -802,7 +1003,7 @@ class MediaSegmenterApp(ctk.CTk):
             out_short = self.vseg_output_dir
             if len(out_short) > 35:
                 out_short = out_short[:15] + "..." + out_short[-15:]
-            self.lbl_vseg_outdir.configure(text=f"输出文件夹: {out_short}", text_color=("black", "white"))
+            self.lbl_vseg_outdir.configure(text=f"输出文件夹: {out_short}", text_color="#0F172A")
 
     def select_vmerge_indir(self):
         dir_path = filedialog.askdirectory(title="选择输入文件夹 (包含要合并的视频)")
@@ -811,7 +1012,7 @@ class MediaSegmenterApp(ctk.CTk):
             in_short = self.vmerge_input_dir
             if len(in_short) > 35:
                 in_short = in_short[:15] + "..." + in_short[-15:]
-            self.lbl_vmerge_indir.configure(text=f"输入文件夹: {in_short}", text_color=("black", "white"))
+            self.lbl_vmerge_indir.configure(text=f"输入文件夹: {in_short}", text_color="#0F172A")
 
     def start_vseg_processing(self):
         if not self.vseg_input_file:
@@ -827,14 +1028,14 @@ class MediaSegmenterApp(ctk.CTk):
             messagebox.showwarning("提示", "分割数量需为正整数，重叠时间需为非负数！")
             return
             
-        self.btn_start_vseg.configure(state="disabled", text="处理中...")
+        self.btn_start_vseg.configure(state="disabled", text="⏳  处理中...")
         self.btn_select_vseg_file.configure(state="disabled")
         self.btn_select_vseg_outdir.configure(state="disabled")
         self.entry_vseg_parts.configure(state="disabled")
         self.entry_vseg_overlap.configure(state="disabled")
         
         self.vseg_progress_bar.set(0)
-        self.lbl_vseg_status.configure(text="正在获取媒体信息...", text_color="#17a2b8")
+        self.lbl_vseg_status.configure(text="正在获取媒体信息...", text_color="#4F46E5")
         
         threading.Thread(target=process_video, args=(
             self.vseg_input_file, self.vseg_output_dir, num_parts, overlap,
@@ -854,12 +1055,12 @@ class MediaSegmenterApp(ctk.CTk):
             
         output_file = os.path.join(self.vmerge_input_dir, output_name)
         
-        self.btn_start_vmerge.configure(state="disabled", text="处理中...")
+        self.btn_start_vmerge.configure(state="disabled", text="⏳  处理中...")
         self.btn_select_vmerge_indir.configure(state="disabled")
         self.entry_vmerge_name.configure(state="disabled")
         
         self.vmerge_progress_bar.set(0)
-        self.lbl_vmerge_status.configure(text="正在获取媒体列表...", text_color="#17a2b8")
+        self.lbl_vmerge_status.configure(text="正在获取媒体列表...", text_color="#4F46E5")
         
         threading.Thread(target=merge_video, args=(
             self.vmerge_input_dir, output_file,
@@ -874,17 +1075,17 @@ class MediaSegmenterApp(ctk.CTk):
         
     def on_vseg_complete(self, success):
         def _reset_ui():
-            self.btn_start_vseg.configure(state="normal", text="开始分割")
+            self.btn_start_vseg.configure(state="normal", text="⚡  开始分割")
             self.btn_select_vseg_file.configure(state="normal")
             self.btn_select_vseg_outdir.configure(state="normal")
             self.entry_vseg_parts.configure(state="normal")
             self.entry_vseg_overlap.configure(state="normal")
             
             if success:
-                self.lbl_vseg_status.configure(text_color="#28a745")
+                self.lbl_vseg_status.configure(text_color="#10B981")
                 messagebox.showinfo("成功", "分割已完成！")
             else:
-                self.lbl_vseg_status.configure(text_color="#dc3545")
+                self.lbl_vseg_status.configure(text_color="#EF4444")
                 messagebox.showerror("错误", "处理过程中发生错误，请查看提示。")
         self.after(0, _reset_ui)
 
@@ -896,15 +1097,15 @@ class MediaSegmenterApp(ctk.CTk):
         
     def on_vmerge_complete(self, success):
         def _reset_ui():
-            self.btn_start_vmerge.configure(state="normal", text="开始合并")
+            self.btn_start_vmerge.configure(state="normal", text="⚡  开始合并")
             self.btn_select_vmerge_indir.configure(state="normal")
             self.entry_vmerge_name.configure(state="normal")
             
             if success:
-                self.lbl_vmerge_status.configure(text_color="#28a745")
+                self.lbl_vmerge_status.configure(text_color="#10B981")
                 messagebox.showinfo("成功", "合并已完成！")
             else:
-                self.lbl_vmerge_status.configure(text_color="#dc3545")
+                self.lbl_vmerge_status.configure(text_color="#EF4444")
                 messagebox.showerror("错误", "合并过程中发生错误，请查看提示。")
         self.after(0, _reset_ui)
 
@@ -917,50 +1118,81 @@ class MediaSegmenterApp(ctk.CTk):
         self.video_duration = 0
         self.video_output_dir = None
 
-        # --- File Selection ---
-        self.lbl_video_file = ctk.CTkLabel(tab, text="未选择视频文件", font=("Microsoft YaHei UI", 13), text_color="gray")
-        self.lbl_video_file.pack(pady=(10, 3), padx=10, anchor="w")
-        self.btn_select_video = ctk.CTkButton(tab, text="选择视频文件", command=self.select_video_file, height=34)
-        self.btn_select_video.pack(pady=(0, 5), padx=10, fill="x")
+        card_file = ctk.CTkFrame(tab, fg_color="#FFFFFF", corner_radius=10, border_width=1, border_color="#E2E8F0")
+        card_file.pack(fill="x", padx=12, pady=(12, 8))
+        
+        lbl_file_header = ctk.CTkLabel(card_file, text="视频文件及信息", font=("Microsoft YaHei UI", 11, "bold"), text_color="#94A3B8")
+        lbl_file_header.pack(anchor="w", padx=14, pady=(10, 2))
+        
+        self.lbl_video_file = ctk.CTkLabel(card_file, text="未选择视频文件", font=("Microsoft YaHei UI", 12), text_color="#64748B")
+        self.lbl_video_file.pack(padx=14, pady=(0, 6), anchor="w")
+        
+        self.btn_select_video = ctk.CTkButton(
+            card_file, text="📁  选择视频文件", command=self.select_video_file, height=36,
+            fg_color="#F8FAFC", hover_color="#EEF2FF", border_width=1, border_color="#CBD5E1",
+            text_color="#0F172A", font=("Microsoft YaHei UI", 12, "bold"), corner_radius=8
+        )
+        self.btn_select_video.pack(padx=14, pady=(0, 8), fill="x")
+        
+        self.frm_video_info = ctk.CTkFrame(card_file, fg_color="#F1F5F9", corner_radius=6, border_width=1, border_color="#E2E8F0")
+        self.frm_video_info.pack(padx=14, pady=(0, 12), fill="x")
+        self.lbl_vinfo_duration = ctk.CTkLabel(self.frm_video_info, text="时长: --", font=("Consolas", 12, "bold"), text_color="#4F46E5")
+        self.lbl_vinfo_duration.pack(side="left", padx=10, pady=4)
+        self.lbl_vinfo_resolution = ctk.CTkLabel(self.frm_video_info, text="分辨率: --", font=("Consolas", 12, "bold"), text_color="#4F46E5")
+        self.lbl_vinfo_resolution.pack(side="left", padx=10, pady=4)
+        self.lbl_vinfo_size = ctk.CTkLabel(self.frm_video_info, text="大小: --", font=("Consolas", 12, "bold"), text_color="#4F46E5")
+        self.lbl_vinfo_size.pack(side="left", padx=10, pady=4)
 
-        # --- Video Info ---
-        self.frm_video_info = ctk.CTkFrame(tab)
-        self.frm_video_info.pack(pady=5, padx=10, fill="x")
-        self.lbl_vinfo_duration = ctk.CTkLabel(self.frm_video_info, text="时长: --", font=("Microsoft YaHei UI", 12))
-        self.lbl_vinfo_duration.grid(row=0, column=0, padx=10, pady=4, sticky="w")
-        self.lbl_vinfo_resolution = ctk.CTkLabel(self.frm_video_info, text="分辨率: --", font=("Microsoft YaHei UI", 12))
-        self.lbl_vinfo_resolution.grid(row=0, column=1, padx=10, pady=4, sticky="w")
-        self.lbl_vinfo_size = ctk.CTkLabel(self.frm_video_info, text="大小: --", font=("Microsoft YaHei UI", 12))
-        self.lbl_vinfo_size.grid(row=0, column=2, padx=10, pady=4, sticky="w")
-
-        # --- Time Input ---
-        self.frm_clip_params = ctk.CTkFrame(tab, fg_color="transparent")
-        self.frm_clip_params.pack(pady=5, padx=10, fill="x")
+        card_clip = ctk.CTkFrame(tab, fg_color="#FFFFFF", corner_radius=10, border_width=1, border_color="#E2E8F0")
+        card_clip.pack(fill="x", padx=12, pady=8)
+        
+        lbl_clip_header = ctk.CTkLabel(card_clip, text="截取区间设定", font=("Microsoft YaHei UI", 11, "bold"), text_color="#94A3B8")
+        lbl_clip_header.pack(anchor="w", padx=14, pady=(10, 4))
+        
+        self.frm_clip_params = ctk.CTkFrame(card_clip, fg_color="transparent")
+        self.frm_clip_params.pack(padx=14, pady=(0, 12), fill="x")
         self.frm_clip_params.columnconfigure(0, weight=1)
-        self.frm_clip_params.columnconfigure(1, weight=2)
+        self.frm_clip_params.columnconfigure(1, weight=0)
 
-        ctk.CTkLabel(self.frm_clip_params, text="开始时间:", font=("Microsoft YaHei UI", 13)).grid(row=0, column=0, padx=(0, 10), pady=8, sticky="e")
-        self.entry_clip_start = ctk.CTkEntry(self.frm_clip_params, width=160, height=32, placeholder_text="例: 37.30 或 00:00:37.30")
-        self.entry_clip_start.grid(row=0, column=1, pady=8, sticky="w")
+        ctk.CTkLabel(self.frm_clip_params, text="开始时间:", font=("Microsoft YaHei UI", 12), text_color="#1E293B").grid(row=0, column=0, pady=6, sticky="w")
+        self.entry_clip_start = ctk.CTkEntry(
+            self.frm_clip_params, width=170, height=32, font=("Consolas", 12, "bold"),
+            text_color="#4F46E5", fg_color="#F8FAFC", border_color="#CBD5E1", border_width=1, corner_radius=6,
+            placeholder_text="例: 37.30 或 00:00:37.30"
+        )
+        self.entry_clip_start.grid(row=0, column=1, pady=6, sticky="e")
 
-        ctk.CTkLabel(self.frm_clip_params, text="结束时间:", font=("Microsoft YaHei UI", 13)).grid(row=1, column=0, padx=(0, 10), pady=8, sticky="e")
-        self.entry_clip_end = ctk.CTkEntry(self.frm_clip_params, width=160, height=32, placeholder_text="例: 47.90 或 00:00:47.90")
-        self.entry_clip_end.grid(row=1, column=1, pady=8, sticky="w")
+        ctk.CTkLabel(self.frm_clip_params, text="结束时间:", font=("Microsoft YaHei UI", 12), text_color="#1E293B").grid(row=1, column=0, pady=6, sticky="w")
+        self.entry_clip_end = ctk.CTkEntry(
+            self.frm_clip_params, width=170, height=32, font=("Consolas", 12, "bold"),
+            text_color="#4F46E5", fg_color="#F8FAFC", border_color="#CBD5E1", border_width=1, corner_radius=6,
+            placeholder_text="例: 47.90 或 00:00:47.90"
+        )
+        self.entry_clip_end.grid(row=1, column=1, pady=6, sticky="e")
 
-        # --- Buttons ---
         self.frm_clip_buttons = ctk.CTkFrame(tab, fg_color="transparent")
-        self.frm_clip_buttons.pack(pady=(8, 5), padx=10, fill="x")
-        self.btn_start_clip = ctk.CTkButton(self.frm_clip_buttons, text="开始截取", command=self.start_clipping, height=42, font=("Microsoft YaHei UI", 14, "bold"), fg_color="#28a745", hover_color="#218838")
-        self.btn_start_clip.pack(side="left", fill="x", expand=True, padx=(0, 5))
-        self.btn_open_clip_dir = ctk.CTkButton(self.frm_clip_buttons, text="打开输出目录", command=self.open_clip_output_dir, height=42, fg_color="#6c757d", hover_color="#5a6268")
-        self.btn_open_clip_dir.pack(side="left", fill="x", expand=True, padx=(5, 0))
+        self.frm_clip_buttons.pack(padx=12, pady=(12, 6), fill="x")
+        
+        self.btn_start_clip = ctk.CTkButton(
+            self.frm_clip_buttons, text="⚡  开始截取", command=self.start_clipping, height=44,
+            font=("Microsoft YaHei UI", 14, "bold"), fg_color="#10B981", hover_color="#059669",
+            text_color="#FFFFFF", corner_radius=8
+        )
+        self.btn_start_clip.pack(side="left", fill="x", expand=True, padx=(0, 6))
+        
+        self.btn_open_clip_dir = ctk.CTkButton(
+            self.frm_clip_buttons, text="📂  打开输出目录", command=self.open_clip_output_dir, height=44,
+            font=("Microsoft YaHei UI", 12, "bold"), fg_color="#FFFFFF", border_width=1, border_color="#CBD5E1",
+            text_color="#334155", hover_color="#F1F5F9", corner_radius=8
+        )
+        self.btn_open_clip_dir.pack(side="left", fill="x", expand=True, padx=(6, 0))
 
-        # --- Progress ---
-        self.clip_progress_bar = ctk.CTkProgressBar(tab, height=10)
-        self.clip_progress_bar.pack(pady=(8, 3), padx=10, fill="x")
+        self.clip_progress_bar = ctk.CTkProgressBar(tab, height=8, corner_radius=4, fg_color="#E2E8F0", progress_color="#10B981")
+        self.clip_progress_bar.pack(padx=12, pady=4, fill="x")
         self.clip_progress_bar.set(0)
-        self.lbl_clip_status = ctk.CTkLabel(tab, text="等待开始...", text_color="gray", font=("Microsoft YaHei UI", 12))
-        self.lbl_clip_status.pack(pady=3)
+        
+        self.lbl_clip_status = ctk.CTkLabel(tab, text="就绪 · 等待任务开始", text_color="#64748B", font=("Microsoft YaHei UI", 12))
+        self.lbl_clip_status.pack(pady=(4, 8))
 
     def select_video_file(self):
         file_path = filedialog.askopenfilename(
@@ -974,8 +1206,7 @@ class MediaSegmenterApp(ctk.CTk):
         short_name = os.path.basename(file_path)
         if len(short_name) > 35:
             short_name = short_name[:18] + "..." + short_name[-12:]
-        self.lbl_video_file.configure(text=f"已选择: {short_name}", text_color=("black", "white"))
-        # Fetch info in background
+        self.lbl_video_file.configure(text=f"已选择: {short_name}", text_color="#0F172A")
         threading.Thread(target=self._load_video_info, args=(file_path,), daemon=True).start()
 
     def _load_video_info(self, file_path):
@@ -987,13 +1218,12 @@ class MediaSegmenterApp(ctk.CTk):
             self.after(0, lambda: self.lbl_vinfo_resolution.configure(text=f"分辨率: {res_text}"))
             self.after(0, lambda: self.lbl_vinfo_size.configure(text=f"大小: {format_file_size(size)}"))
         except Exception as e:
-            self.after(0, lambda: self.lbl_clip_status.configure(text=f"获取信息失败: {e}", text_color="#dc3545"))
+            self.after(0, lambda: self.lbl_clip_status.configure(text=f"获取信息失败: {e}", text_color="#EF4444"))
 
     def start_clipping(self):
         if not self.video_file:
             messagebox.showwarning("提示", "请先选择一个视频文件！")
             return
-        # Parse and validate times
         try:
             start_t = parse_time_input(self.entry_clip_start.get())
             end_t = parse_time_input(self.entry_clip_end.get())
@@ -1010,20 +1240,18 @@ class MediaSegmenterApp(ctk.CTk):
             messagebox.showwarning("提示", f"结束时间不能超过视频总时长 ({format_duration(self.video_duration)})！")
             return
 
-        # Build output filename
         base, ext = os.path.splitext(os.path.basename(self.video_file))
         start_str = f"{start_t:.2f}"
         end_str = f"{end_t:.2f}"
         out_name = f"{base}_clip_{start_str}_{end_str}{ext}"
         output_file = os.path.join(self.video_output_dir, out_name)
 
-        # Disable UI
-        self.btn_start_clip.configure(state="disabled", text="处理中...")
+        self.btn_start_clip.configure(state="disabled", text="⏳  处理中...")
         self.btn_select_video.configure(state="disabled")
         self.entry_clip_start.configure(state="disabled")
         self.entry_clip_end.configure(state="disabled")
         self.clip_progress_bar.set(0)
-        self.lbl_clip_status.configure(text="正在截取...", text_color="#17a2b8")
+        self.lbl_clip_status.configure(text="正在截取...", text_color="#4F46E5")
 
         threading.Thread(target=clip_video, args=(
             self.video_file, output_file, start_t, end_t,
@@ -1045,15 +1273,15 @@ class MediaSegmenterApp(ctk.CTk):
 
     def on_clip_complete(self, success):
         def _reset():
-            self.btn_start_clip.configure(state="normal", text="开始截取")
+            self.btn_start_clip.configure(state="normal", text="⚡  开始截取")
             self.btn_select_video.configure(state="normal")
             self.entry_clip_start.configure(state="normal")
             self.entry_clip_end.configure(state="normal")
             if success:
-                self.lbl_clip_status.configure(text_color="#28a745")
+                self.lbl_clip_status.configure(text_color="#10B981")
                 messagebox.showinfo("成功", "视频截取已完成！")
             else:
-                self.lbl_clip_status.configure(text_color="#dc3545")
+                self.lbl_clip_status.configure(text_color="#EF4444")
                 messagebox.showerror("错误", "截取过程中发生错误，请查看提示。")
         self.after(0, _reset)
 
@@ -1066,48 +1294,79 @@ class MediaSegmenterApp(ctk.CTk):
         self.audio_clip_duration = 0
         self.audio_clip_output_dir = None
 
-        # --- File Selection ---
-        self.lbl_audio_clip_file = ctk.CTkLabel(tab, text="未选择音频文件", font=("Microsoft YaHei UI", 13), text_color="gray")
-        self.lbl_audio_clip_file.pack(pady=(10, 3), padx=10, anchor="w")
-        self.btn_select_audio_clip = ctk.CTkButton(tab, text="选择音频文件", command=self.select_audio_clip_file, height=34)
-        self.btn_select_audio_clip.pack(pady=(0, 5), padx=10, fill="x")
+        card_file = ctk.CTkFrame(tab, fg_color="#FFFFFF", corner_radius=10, border_width=1, border_color="#E2E8F0")
+        card_file.pack(fill="x", padx=12, pady=(12, 8))
+        
+        lbl_file_header = ctk.CTkLabel(card_file, text="音频文件及信息", font=("Microsoft YaHei UI", 11, "bold"), text_color="#94A3B8")
+        lbl_file_header.pack(anchor="w", padx=14, pady=(10, 2))
+        
+        self.lbl_audio_clip_file = ctk.CTkLabel(card_file, text="未选择音频文件", font=("Microsoft YaHei UI", 12), text_color="#64748B")
+        self.lbl_audio_clip_file.pack(padx=14, pady=(0, 6), anchor="w")
+        
+        self.btn_select_audio_clip = ctk.CTkButton(
+            card_file, text="📁  选择音频文件", command=self.select_audio_clip_file, height=36,
+            fg_color="#F8FAFC", hover_color="#EEF2FF", border_width=1, border_color="#CBD5E1",
+            text_color="#0F172A", font=("Microsoft YaHei UI", 12, "bold"), corner_radius=8
+        )
+        self.btn_select_audio_clip.pack(padx=14, pady=(0, 8), fill="x")
+        
+        self.frm_audio_info = ctk.CTkFrame(card_file, fg_color="#F1F5F9", corner_radius=6, border_width=1, border_color="#E2E8F0")
+        self.frm_audio_info.pack(padx=14, pady=(0, 12), fill="x")
+        self.lbl_ainfo_duration = ctk.CTkLabel(self.frm_audio_info, text="时长: --", font=("Consolas", 12, "bold"), text_color="#4F46E5")
+        self.lbl_ainfo_duration.pack(side="left", padx=12, pady=4)
+        self.lbl_ainfo_size = ctk.CTkLabel(self.frm_audio_info, text="大小: --", font=("Consolas", 12, "bold"), text_color="#4F46E5")
+        self.lbl_ainfo_size.pack(side="left", padx=12, pady=4)
 
-        # --- Audio Info ---
-        self.frm_audio_info = ctk.CTkFrame(tab)
-        self.frm_audio_info.pack(pady=5, padx=10, fill="x")
-        self.lbl_ainfo_duration = ctk.CTkLabel(self.frm_audio_info, text="时长: --", font=("Microsoft YaHei UI", 12))
-        self.lbl_ainfo_duration.grid(row=0, column=0, padx=10, pady=4, sticky="w")
-        self.lbl_ainfo_size = ctk.CTkLabel(self.frm_audio_info, text="大小: --", font=("Microsoft YaHei UI", 12))
-        self.lbl_ainfo_size.grid(row=0, column=1, padx=10, pady=4, sticky="w")
-
-        # --- Time Input ---
-        self.frm_aclip_params = ctk.CTkFrame(tab, fg_color="transparent")
-        self.frm_aclip_params.pack(pady=5, padx=10, fill="x")
+        card_clip = ctk.CTkFrame(tab, fg_color="#FFFFFF", corner_radius=10, border_width=1, border_color="#E2E8F0")
+        card_clip.pack(fill="x", padx=12, pady=8)
+        
+        lbl_clip_header = ctk.CTkLabel(card_clip, text="截取区间设定", font=("Microsoft YaHei UI", 11, "bold"), text_color="#94A3B8")
+        lbl_clip_header.pack(anchor="w", padx=14, pady=(10, 4))
+        
+        self.frm_aclip_params = ctk.CTkFrame(card_clip, fg_color="transparent")
+        self.frm_aclip_params.pack(padx=14, pady=(0, 12), fill="x")
         self.frm_aclip_params.columnconfigure(0, weight=1)
-        self.frm_aclip_params.columnconfigure(1, weight=2)
+        self.frm_aclip_params.columnconfigure(1, weight=0)
 
-        ctk.CTkLabel(self.frm_aclip_params, text="开始时间:", font=("Microsoft YaHei UI", 13)).grid(row=0, column=0, padx=(0, 10), pady=8, sticky="e")
-        self.entry_aclip_start = ctk.CTkEntry(self.frm_aclip_params, width=160, height=32, placeholder_text="例: 37.30 或 00:00:37.30")
-        self.entry_aclip_start.grid(row=0, column=1, pady=8, sticky="w")
+        ctk.CTkLabel(self.frm_aclip_params, text="开始时间:", font=("Microsoft YaHei UI", 12), text_color="#1E293B").grid(row=0, column=0, pady=6, sticky="w")
+        self.entry_aclip_start = ctk.CTkEntry(
+            self.frm_aclip_params, width=170, height=32, font=("Consolas", 12, "bold"),
+            text_color="#4F46E5", fg_color="#F8FAFC", border_color="#CBD5E1", border_width=1, corner_radius=6,
+            placeholder_text="例: 37.30 或 00:00:37.30"
+        )
+        self.entry_aclip_start.grid(row=0, column=1, pady=6, sticky="e")
 
-        ctk.CTkLabel(self.frm_aclip_params, text="结束时间:", font=("Microsoft YaHei UI", 13)).grid(row=1, column=0, padx=(0, 10), pady=8, sticky="e")
-        self.entry_aclip_end = ctk.CTkEntry(self.frm_aclip_params, width=160, height=32, placeholder_text="例: 47.90 或 00:00:47.90")
-        self.entry_aclip_end.grid(row=1, column=1, pady=8, sticky="w")
+        ctk.CTkLabel(self.frm_aclip_params, text="结束时间:", font=("Microsoft YaHei UI", 12), text_color="#1E293B").grid(row=1, column=0, pady=6, sticky="w")
+        self.entry_aclip_end = ctk.CTkEntry(
+            self.frm_aclip_params, width=170, height=32, font=("Consolas", 12, "bold"),
+            text_color="#4F46E5", fg_color="#F8FAFC", border_color="#CBD5E1", border_width=1, corner_radius=6,
+            placeholder_text="例: 47.90 或 00:00:47.90"
+        )
+        self.entry_aclip_end.grid(row=1, column=1, pady=6, sticky="e")
 
-        # --- Buttons ---
         self.frm_aclip_buttons = ctk.CTkFrame(tab, fg_color="transparent")
-        self.frm_aclip_buttons.pack(pady=(8, 5), padx=10, fill="x")
-        self.btn_start_aclip = ctk.CTkButton(self.frm_aclip_buttons, text="开始截取", command=self.start_audio_clipping, height=42, font=("Microsoft YaHei UI", 14, "bold"), fg_color="#28a745", hover_color="#218838")
-        self.btn_start_aclip.pack(side="left", fill="x", expand=True, padx=(0, 5))
-        self.btn_open_aclip_dir = ctk.CTkButton(self.frm_aclip_buttons, text="打开输出目录", command=self.open_audio_clip_output_dir, height=42, fg_color="#6c757d", hover_color="#5a6268")
-        self.btn_open_aclip_dir.pack(side="left", fill="x", expand=True, padx=(5, 0))
+        self.frm_aclip_buttons.pack(padx=12, pady=(12, 6), fill="x")
+        
+        self.btn_start_aclip = ctk.CTkButton(
+            self.frm_aclip_buttons, text="⚡  开始截取", command=self.start_audio_clipping, height=44,
+            font=("Microsoft YaHei UI", 14, "bold"), fg_color="#10B981", hover_color="#059669",
+            text_color="#FFFFFF", corner_radius=8
+        )
+        self.btn_start_aclip.pack(side="left", fill="x", expand=True, padx=(0, 6))
+        
+        self.btn_open_aclip_dir = ctk.CTkButton(
+            self.frm_aclip_buttons, text="📂  打开输出目录", command=self.open_audio_clip_output_dir, height=44,
+            font=("Microsoft YaHei UI", 12, "bold"), fg_color="#FFFFFF", border_width=1, border_color="#CBD5E1",
+            text_color="#334155", hover_color="#F1F5F9", corner_radius=8
+        )
+        self.btn_open_aclip_dir.pack(side="left", fill="x", expand=True, padx=(6, 0))
 
-        # --- Progress ---
-        self.aclip_progress_bar = ctk.CTkProgressBar(tab, height=10)
-        self.aclip_progress_bar.pack(pady=(8, 3), padx=10, fill="x")
+        self.aclip_progress_bar = ctk.CTkProgressBar(tab, height=8, corner_radius=4, fg_color="#E2E8F0", progress_color="#10B981")
+        self.aclip_progress_bar.pack(padx=12, pady=4, fill="x")
         self.aclip_progress_bar.set(0)
-        self.lbl_aclip_status = ctk.CTkLabel(tab, text="等待开始...", text_color="gray", font=("Microsoft YaHei UI", 12))
-        self.lbl_aclip_status.pack(pady=3)
+        
+        self.lbl_aclip_status = ctk.CTkLabel(tab, text="就绪 · 等待任务开始", text_color="#64748B", font=("Microsoft YaHei UI", 12))
+        self.lbl_aclip_status.pack(pady=(4, 8))
 
     def select_audio_clip_file(self):
         file_path = filedialog.askopenfilename(
@@ -1121,8 +1380,7 @@ class MediaSegmenterApp(ctk.CTk):
         short_name = os.path.basename(file_path)
         if len(short_name) > 35:
             short_name = short_name[:18] + "..." + short_name[-12:]
-        self.lbl_audio_clip_file.configure(text=f"已选择: {short_name}", text_color=("black", "white"))
-        # Fetch info in background
+        self.lbl_audio_clip_file.configure(text=f"已选择: {short_name}", text_color="#0F172A")
         threading.Thread(target=self._load_audio_info, args=(file_path,), daemon=True).start()
 
     def _load_audio_info(self, file_path):
@@ -1132,13 +1390,12 @@ class MediaSegmenterApp(ctk.CTk):
             self.after(0, lambda: self.lbl_ainfo_duration.configure(text=f"时长: {format_duration(duration)}"))
             self.after(0, lambda: self.lbl_ainfo_size.configure(text=f"大小: {format_file_size(size)}"))
         except Exception as e:
-            self.after(0, lambda: self.lbl_aclip_status.configure(text=f"获取信息失败: {e}", text_color="#dc3545"))
+            self.after(0, lambda: self.lbl_aclip_status.configure(text=f"获取信息失败: {e}", text_color="#EF4444"))
 
     def start_audio_clipping(self):
         if not self.audio_clip_file:
             messagebox.showwarning("提示", "请先选择一个音频文件！")
             return
-        # Parse and validate times
         try:
             start_t = parse_time_input(self.entry_aclip_start.get())
             end_t = parse_time_input(self.entry_aclip_end.get())
@@ -1155,20 +1412,18 @@ class MediaSegmenterApp(ctk.CTk):
             messagebox.showwarning("提示", f"结束时间不能超过音频总时长 ({format_duration(self.audio_clip_duration)})！")
             return
 
-        # Build output filename
         base, ext = os.path.splitext(os.path.basename(self.audio_clip_file))
         start_str = f"{start_t:.2f}"
         end_str = f"{end_t:.2f}"
         out_name = f"{base}_clip_{start_str}_{end_str}{ext}"
         output_file = os.path.join(self.audio_clip_output_dir, out_name)
 
-        # Disable UI
-        self.btn_start_aclip.configure(state="disabled", text="处理中...")
+        self.btn_start_aclip.configure(state="disabled", text="⏳  处理中...")
         self.btn_select_audio_clip.configure(state="disabled")
         self.entry_aclip_start.configure(state="disabled")
         self.entry_aclip_end.configure(state="disabled")
         self.aclip_progress_bar.set(0)
-        self.lbl_aclip_status.configure(text="正在截取...", text_color="#17a2b8")
+        self.lbl_aclip_status.configure(text="正在截取...", text_color="#4F46E5")
 
         threading.Thread(target=clip_audio, args=(
             self.audio_clip_file, output_file, start_t, end_t,
@@ -1190,15 +1445,15 @@ class MediaSegmenterApp(ctk.CTk):
 
     def on_aclip_complete(self, success):
         def _reset():
-            self.btn_start_aclip.configure(state="normal", text="开始截取")
+            self.btn_start_aclip.configure(state="normal", text="⚡  开始截取")
             self.btn_select_audio_clip.configure(state="normal")
             self.entry_aclip_start.configure(state="normal")
             self.entry_aclip_end.configure(state="normal")
             if success:
-                self.lbl_aclip_status.configure(text_color="#28a745")
+                self.lbl_aclip_status.configure(text_color="#10B981")
                 messagebox.showinfo("成功", "音频截取已完成！")
             else:
-                self.lbl_aclip_status.configure(text_color="#dc3545")
+                self.lbl_aclip_status.configure(text_color="#EF4444")
                 messagebox.showerror("错误", "截取过程中发生错误，请查看提示。")
         self.after(0, _reset)
 
